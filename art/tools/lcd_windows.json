@@ -1,0 +1,6 @@
+{
+  "_comment": "LCD glass window on the rectified 2000-px-wide faces (x, y, w, h in pixels), checked by hand from edge profiles: inside the bevel / dark frame. measure.py's automatic box is used when a model is missing here.",
+  "12c": [352, 90, 944, 196],
+  "15c": [360, 97, 940, 193],
+  "16c": [349, 89, 951, 203]
+}

@@ -1,0 +1,1775 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+		00191052F6DFF308F8F4358E = {
+			isa = PBXBuildFile;
+			fileRef = 2E0534FBA858AEDC693AD49B;
+		};
+		00199BF5F89F2C5291E4033B = {
+			isa = PBXBuildFile;
+			fileRef = 2488AC708C9DC26D88CCC488;
+		};
+		00E9003BC3C1798E848F6122 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SWIFT_VERSION = 5.0;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../core/include";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../core/include";
+				GCC_C_LANGUAGE_STANDARD = c11;
+				CLANG_ENABLE_MODULES = YES;
+				MARKETING_VERSION = 0.6.4;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				PRODUCT_NAME = VoyagerCalc;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josegonzalezdivasson.VoyagerCalc;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_FILE = Resources/iOS/Info.plist;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				ONLY_ACTIVE_ARCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+			};
+			name = Debug;
+		};
+		0110F7C7479EE091FE91C5DA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = SHA256Hex.swift;
+			path = Sources/Core/SHA256Hex.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		01EE620E857A1D3BE7031713 = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Faces;
+			sourceTree = "<group>";
+		};
+		034BAA0F3E9BDC2D650892AB = {
+			isa = PBXBuildFile;
+			fileRef = 57E82F282011E365C42005C1;
+		};
+		07397A2F99A50B879619D1E8 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				78D6D32DCF1167F2E0667373,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		091E26123CC06489BBDD6E84 = {
+			isa = PBXBuildFile;
+			fileRef = ECB36F032B52A7CF7EE95552;
+		};
+		0A1AA2FF225250FF487CA910 = {
+			isa = PBXBuildFile;
+			fileRef = A889BDE61CDC45D1950973BE;
+		};
+		0A22E9FD5D5A08D98677D13F = {
+			isa = PBXBuildFile;
+			fileRef = 8C8AB9D81655E8E2ADBB8025;
+		};
+		0BD352B58033636BDEC2B0EF = {
+			isa = PBXBuildFile;
+			fileRef = 237E6BD964CF982AAFB86A98;
+		};
+		0DF861632636C2F345DFC520 = {
+			isa = PBXBuildFile;
+			fileRef = 10CADC6398D1884D2E3B7BBE;
+		};
+		10CADC6398D1884D2E3B7BBE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = FirmwareStore.swift;
+			path = Sources/App/FirmwareStore.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		1143AC6FD830ED8EFDCEAA8A = {
+			isa = PBXBuildFile;
+			fileRef = FF77BE7CFD837746F961E75E;
+		};
+		116F203AFBD2C5384BDEFAC9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = MemoryDocTests.swift;
+			path = Tests/KitTests/MemoryDocTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		13546A2F2E54AD5C84052525 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = VoyagerCalculator.swift;
+			path = Sources/Core/VoyagerCalculator.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		146A681A226B9B43E32DC3D1 = {
+			isa = PBXBuildFile;
+			fileRef = 723564C7EB71E7246DF209C8;
+		};
+		15C33C40C9EA933B52D6B9BA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Model16C.swift;
+			path = Sources/Models/Model16C.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		170D484BC52458DF377D2CAC = {
+			isa = PBXBuildFile;
+			fileRef = A6912AC693B64DA258A7E12C;
+		};
+		1740C76E09DF200B5F79EF28 = {
+			isa = PBXBuildFile;
+			fileRef = FD94D6F2B5D517CC5A0EB7B9;
+		};
+		18DAA906FE39BBD095D03371 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramDocumentPDF.swift;
+			path = Sources/Core/ProgramDocumentPDF.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		18DDDC84DB70534CD888F964 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1AA27C7D87ED2AE99C0C0963 = {
+			isa = PBXBuildFile;
+			fileRef = 850AE0AEFE9C2D583129C3E6;
+		};
+		1C07FA114C3B1BFB6219D6F4 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = "DEBUG=1 $(inherited)";
+			};
+			name = Debug;
+		};
+		1C17F86AA2286E812D464F07 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = KeyView.swift;
+			path = Sources/Views/KeyView.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		1CE5DF216092179C52535476 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = cpu.c;
+			path = ../core/src/cpu.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		1D5DDAD49CFBBE1C23298DDB = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3D62C3A60B337EB4597EFE68,
+				58E9EB2ABF939A6538BAFF6E,
+				F96CDA46AAD831784D626406,
+				920CD4D27DDD08302CED9DB8,
+				9E1E38C92A461A5C997B1CB3,
+				B0BF09ACB2E5F28B1CBF5584,
+				35E488935068E32124CA6235,
+				B8917169D9FE92185A359A1C,
+				0BD352B58033636BDEC2B0EF,
+				00191052F6DFF308F8F4358E,
+				68EA6AA583496D92BBE76EAE,
+				3E527C42ED53894FD6B1E110,
+				875C8C7C98D034564977B0B5,
+				091E26123CC06489BBDD6E84,
+				B493CFB5F0917D5918F37E9E,
+				9A7DDF381D987A0A1FDFBC2E,
+				BB37367D9BD14587FFB1764F,
+				2DEA85CF9E0831782421C463,
+				146A681A226B9B43E32DC3D1,
+				C626C362C5DF8F878F13E605,
+				E326099B5C104DECC694F8C4,
+				034BAA0F3E9BDC2D650892AB,
+				64349F9FDB853ACDC5751DFE,
+				2B16D2E2DBC7F52A3D814633,
+				1AA27C7D87ED2AE99C0C0963,
+				CA384DD4AF6C471D0CF4752C,
+				C2D6C98101C84C3704EF2E45,
+				6B9FDF39167CB7B4FBA6AAB8,
+				2144EB5BAC889DBBF3F06FC9,
+				E925FB4EC53ADACC8E5AE9D3,
+				B0D1EE850A4747625A960D20,
+				D78A6A6F4624785DD9B170D7,
+				D234D858F0D4BBF9015606C1,
+				E703988179C090414B6597B9,
+				1FB457F0AC832EBFE82A2A95,
+				00199BF5F89F2C5291E4033B,
+				2EFAD034D1DF71DD65B0B36A,
+				5F29FE9150B527C1858B8144,
+				CD1EF441A026E02D365D713F,
+				A2ECB73F760D999A025553F7,
+				41B603CC9F2F749DBE1A4909,
+				2904E75822F254F82B0A6237,
+				A038664771C196643C26BD61,
+				DEC06DC10BC1557761A76A47,
+				FC2141DF93AF7849BC1D21CC,
+				CBCFED6DE0DC3EC35D797C92,
+				77C7F2D790E18764A7C1E91E,
+				B1A0A1B7BBBA96936F638ACB,
+				5A155CE36E9AA01F93E976D9,
+				5791E87A2D886C03044FCE81,
+				A25E3078528FB8CE669B1AF0,
+				BF455B356A1D657E33F7C588,
+				AAD2B137AC37DBD2D00E295C,
+				642F6595DE883116B627B06E,
+				5ABF0356DEA7E953D0D96D8E,
+				55CBEC9C418F879FA88CAF02,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		1D62EC49570A79EF2509F35F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = MemoryFile.swift;
+			path = Sources/App/MemoryFile.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		1DB2007D79AC7360447C1952 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = PhotoFaceLabels.swift;
+			path = Sources/Models/PhotoFaceLabels.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		1F04C4CAC74C753A8CBAE332 = {
+			isa = PBXBuildFile;
+			fileRef = 9329309CB045D4B91F4154BF;
+		};
+		1F205298CA170F71DA1F8061 = {
+			isa = PBXBuildFile;
+			fileRef = 997D138B0DF125927A5D4EBC;
+		};
+		1FB457F0AC832EBFE82A2A95 = {
+			isa = PBXBuildFile;
+			fileRef = 580CBBF8F0E3D8E271429AF7;
+		};
+		2144EB5BAC889DBBF3F06FC9 = {
+			isa = PBXBuildFile;
+			fileRef = 0110F7C7479EE091FE91C5DA;
+		};
+		22919E30D41DF7AC5FA58A3A = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 56AEC85B35B80B1B63CE37A6;
+			buildPhases = (
+				FDA68A1D086543ADCF1C0AD8,
+				CB276DF96369AA027173D802,
+				7263985000E89973FB7022B2,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "VoyagerCalc-iOS";
+			productName = VoyagerCalc;
+			productReference = DAFC450E21001F7660F2F40F;
+			productType = "com.apple.product-type.application";
+		};
+		22D75762EE3A774A4BB22130 = {
+			isa = PBXBuildFile;
+			fileRef = C2B2A857A0669303B5DBDB12;
+		};
+		237E6BD964CF982AAFB86A98 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = HardwareKeyboard.swift;
+			path = Sources/Views/HardwareKeyboard.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		2488AC708C9DC26D88CCC488 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Model15C.swift;
+			path = Sources/Models/Model15C.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		253A57F5FF11D8AEBAE07752 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SWIFT_VERSION = 5.0;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../core/include";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../core/include";
+				GCC_C_LANGUAGE_STANDARD = c11;
+				CLANG_ENABLE_MODULES = YES;
+				MARKETING_VERSION = 0.6.4;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				PRODUCT_NAME = VoyagerCalcTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josegonzalezdivasson.VoyagerCalc.tests;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "-";
+				DEVELOPMENT_TEAM = "";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				GCC_OPTIMIZATION_LEVEL = 2;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+			};
+			name = Release;
+		};
+		25D6C9CF91722B5576707E3D = {
+			isa = PBXBuildFile;
+			fileRef = 2488AC708C9DC26D88CCC488;
+		};
+		267AEBE1BACFD8AB573455B5 = {
+			isa = PBXGroup;
+			children = (
+				A6912AC693B64DA258A7E12C,
+				A889BDE61CDC45D1950973BE,
+				10CADC6398D1884D2E3B7BBE,
+				EDCA7607B007F56A9C5A3576,
+				1D62EC49570A79EF2509F35F,
+				9D28941E8647B1B90B85BE3F,
+				FE7C6D00EBBD4C6D2F37D7F9,
+				56BA1FF3F43CC0D55A4A6EAF,
+			);
+			name = App;
+			sourceTree = "<group>";
+		};
+		28E1019A40499A3E4BD7A1F1 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		2904E75822F254F82B0A6237 = {
+			isa = PBXBuildFile;
+			fileRef = FF77BE7CFD837746F961E75E;
+		};
+		2AC8BA37DAC32D5437812408 = {
+			isa = PBXGroup;
+			children = (
+				F2F95540D2A3F3DB273E8922,
+				DAFC450E21001F7660F2F40F,
+				64F8A663F954590DD466B5FF,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		2AF11A6BF00102800817FFF4 = {
+			isa = PBXBuildFile;
+			fileRef = CDD1379317EEC3C525FF7FD0;
+		};
+		2B16D2E2DBC7F52A3D814633 = {
+			isa = PBXBuildFile;
+			fileRef = E4B6F0A2FF68591A4D130DEB;
+		};
+		2C287A9F6428E575569C0B2E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramDocTests.swift;
+			path = Tests/KitTests/ProgramDocTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		2DDE0C4A784B9C331CFC1254 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				4EE4B4702A5C54F3427406F4,
+				ABA7E5C88E3EB203A06DA3AC,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		2DEA85CF9E0831782421C463 = {
+			isa = PBXBuildFile;
+			fileRef = F9E7EA1BE0224B14C04DA5ED;
+		};
+		2DFAB37B0C3E2CE454281448 = {
+			isa = PBXBuildFile;
+			fileRef = E4B6F0A2FF68591A4D130DEB;
+		};
+		2E0534FBA858AEDC693AD49B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = InspectorView.swift;
+			path = Sources/Views/InspectorView.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		2EFAD034D1DF71DD65B0B36A = {
+			isa = PBXBuildFile;
+			fileRef = 15C33C40C9EA933B52D6B9BA;
+		};
+		3184AC997C8F88876EF76A8C = {
+			isa = PBXGroup;
+			children = (
+				3E43AD280AEAF33CCF48749A,
+				C185EE11C4BB187EDB51FB1E,
+				BDBD736D12FAD5B8B319DBA9,
+				90571FCD4DE777DD8B458141,
+				4CCCB97567F89D133EA0ACE5,
+				8D53691D3E443BC7500EB14B,
+				116F203AFBD2C5384BDEFAC9,
+				6F2DEE74F879DFAF4CD97400,
+				8699A42CD18361074F9B2845,
+				2C287A9F6428E575569C0B2E,
+				D641F48BF3201C6BFEFD8EFB,
+				42E9DF72F5E717E57B4F6D3D,
+			);
+			name = Tests;
+			sourceTree = "<group>";
+		};
+		357BA217F0A070BF3359E177 = {
+			isa = PBXBuildFile;
+			fileRef = CDD1379317EEC3C525FF7FD0;
+		};
+		35A6805E7E2B600A9A7EC369 = {
+			isa = PBXBuildFile;
+			fileRef = DDD2D18926FA768D94B60EFF;
+		};
+		35E488935068E32124CA6235 = {
+			isa = PBXBuildFile;
+			fileRef = FE7C6D00EBBD4C6D2F37D7F9;
+		};
+		36D80EB1B02BAC0E061A0B9B = {
+			isa = PBXBuildFile;
+			fileRef = F9E7EA1BE0224B14C04DA5ED;
+		};
+		3A6E9BC12E1850D756B75859 = {
+			isa = PBXBuildFile;
+			fileRef = 15C33C40C9EA933B52D6B9BA;
+		};
+		3BD9890281AEFA5DF1B660CD = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = LCDView.swift;
+			path = Sources/Views/LCDView.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		3CBED2631D247643FCEAC24C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = voyager_core.h;
+			path = ../core/include/voyager_core.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		3CD754881291C9FFD5BE73DC = {
+			isa = PBXBuildFile;
+			fileRef = A2189B56850B71845656BB05;
+		};
+		3D62C3A60B337EB4597EFE68 = {
+			isa = PBXBuildFile;
+			fileRef = A6912AC693B64DA258A7E12C;
+		};
+		3E43AD280AEAF33CCF48749A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramDocAppTests.swift;
+			path = Tests/AppTests/ProgramDocAppTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		3E527C42ED53894FD6B1E110 = {
+			isa = PBXBuildFile;
+			fileRef = 3BD9890281AEFA5DF1B660CD;
+		};
+		4177A5E40D4896F13C677FF1 = {
+			isa = PBXBuildFile;
+			fileRef = 57E82F282011E365C42005C1;
+		};
+		41B603CC9F2F749DBE1A4909 = {
+			isa = PBXBuildFile;
+			fileRef = 1CE5DF216092179C52535476;
+		};
+		4211D33A1C7DCD4FE0F41672 = {
+			isa = PBXBuildFile;
+			fileRef = 1CE5DF216092179C52535476;
+		};
+		42E9DF72F5E717E57B4F6D3D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = VoyagerKitTests.swift;
+			path = Tests/KitTests/VoyagerKitTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		42FCFD3423041C1C7A26C62D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = CalculatorMachine.swift;
+			path = Sources/Core/CalculatorMachine.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		44144B9ADD90F839210B3C08 = {
+			isa = PBXBuildFile;
+			fileRef = B93D9DA55F4FD1D301EBECDA;
+		};
+		44BDF878FD934CE33377CF5C = {
+			isa = PBXBuildFile;
+			fileRef = 42FCFD3423041C1C7A26C62D;
+		};
+		46DAAD26704CE28F6A90E298 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = CalculatorModel.swift;
+			path = Sources/Models/CalculatorModel.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		46F86FAA6BBF9AC94A7E4595 = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 4704357D31391BE81C31195C;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 4EAE695AD1F489F78EA3E1C6;
+			productRefGroup = 2AC8BA37DAC32D5437812408;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				E15AFCCBF1442F35EAEB1350,
+				22919E30D41DF7AC5FA58A3A,
+				EE0329E21E66BED128E77DAA,
+			);
+		};
+		4704357D31391BE81C31195C = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1C07FA114C3B1BFB6219D6F4,
+				EACC89DFBDBC23F92C301936,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		4974FEC715925E740C1E0F3C = {
+			isa = PBXBuildFile;
+			fileRef = EDCA7607B007F56A9C5A3576;
+		};
+		49DF56DD5C5F890CC5DF716E = {
+			isa = PBXBuildFile;
+			fileRef = 237E6BD964CF982AAFB86A98;
+		};
+		4AACAF328C02D4C121E361EF = {
+			isa = PBXBuildFile;
+			fileRef = 769428F0F53B7F7949D1730D;
+		};
+		4B03526D2478D17AC727FF3C = {
+			isa = PBXBuildFile;
+			fileRef = FD94D6F2B5D517CC5A0EB7B9;
+		};
+		4CCCB97567F89D133EA0ACE5 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = InspectorTests.swift;
+			path = Tests/KitTests/InspectorTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		4EAE695AD1F489F78EA3E1C6 = {
+			isa = PBXGroup;
+			children = (
+				267AEBE1BACFD8AB573455B5,
+				785A62F6730D915597ED2079,
+				647E7164A06FF71518326D10,
+				D124483EF0233AEE30ED7A11,
+				F6C6CCFB1C73A9F50BC5BF2F,
+				3184AC997C8F88876EF76A8C,
+				78293C213848B86FA7E3E3C8,
+				2AC8BA37DAC32D5437812408,
+			);
+			sourceTree = "<group>";
+		};
+		4EE4B4702A5C54F3427406F4 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SWIFT_VERSION = 5.0;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../core/include";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../core/include";
+				GCC_C_LANGUAGE_STANDARD = c11;
+				CLANG_ENABLE_MODULES = YES;
+				MARKETING_VERSION = 0.6.4;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				PRODUCT_NAME = VoyagerCalc;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josegonzalezdivasson.VoyagerCalc;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				INFOPLIST_FILE = Resources/macOS/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = Resources/macOS/VoyagerCalc.entitlements;
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "-";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				ONLY_ACTIVE_ARCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+			};
+			name = Debug;
+		};
+		4FD2B40A6B0707D97AF9F39F = {
+			isa = PBXBuildFile;
+			fileRef = 9D28941E8647B1B90B85BE3F;
+		};
+		5463692A99E3B0065B2B3569 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = sha256.h;
+			path = ../core/src/sha256.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		55B91FB3C88BF7307924DB97 = {
+			isa = PBXBuildFile;
+			fileRef = 237E6BD964CF982AAFB86A98;
+		};
+		55CBEC9C418F879FA88CAF02 = {
+			isa = PBXBuildFile;
+			fileRef = 42E9DF72F5E717E57B4F6D3D;
+		};
+		56AEC85B35B80B1B63CE37A6 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				00E9003BC3C1798E848F6122,
+				8BD5DA0DB97268B3F7DBF298,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		56BA1FF3F43CC0D55A4A6EAF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = VoyagerCalcApp.swift;
+			path = Sources/App/VoyagerCalcApp.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		5791E87A2D886C03044FCE81 = {
+			isa = PBXBuildFile;
+			fileRef = 8D53691D3E443BC7500EB14B;
+		};
+		57E82F282011E365C42005C1 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Inspector.swift;
+			path = Sources/Core/Inspector.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		580CBBF8F0E3D8E271429AF7 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Model12C.swift;
+			path = Sources/Models/Model12C.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		58A969BFC521C620FDEBB2E4 = {
+			isa = PBXBuildFile;
+			fileRef = 1D62EC49570A79EF2509F35F;
+		};
+		58E9EB2ABF939A6538BAFF6E = {
+			isa = PBXBuildFile;
+			fileRef = A889BDE61CDC45D1950973BE;
+		};
+		5A155CE36E9AA01F93E976D9 = {
+			isa = PBXBuildFile;
+			fileRef = 4CCCB97567F89D133EA0ACE5;
+		};
+		5ABF0356DEA7E953D0D96D8E = {
+			isa = PBXBuildFile;
+			fileRef = D641F48BF3201C6BFEFD8EFB;
+		};
+		5AC5A9305D34A6E5DA14F886 = {
+			isa = PBXBuildFile;
+			fileRef = 15C33C40C9EA933B52D6B9BA;
+		};
+		5CD67879D13C1C867E9BFECB = {
+			isa = PBXBuildFile;
+			fileRef = 18DAA906FE39BBD095D03371;
+		};
+		5F29FE9150B527C1858B8144 = {
+			isa = PBXBuildFile;
+			fileRef = 8C8AB9D81655E8E2ADBB8025;
+		};
+		5FD25AC26B7096277A93B8F6 = {
+			isa = PBXBuildFile;
+			fileRef = A6912AC693B64DA258A7E12C;
+		};
+		612C6853680B3B8F8EF051A5 = {
+			isa = PBXBuildFile;
+			fileRef = 0110F7C7479EE091FE91C5DA;
+		};
+		642F6595DE883116B627B06E = {
+			isa = PBXBuildFile;
+			fileRef = 2C287A9F6428E575569C0B2E;
+		};
+		64349F9FDB853ACDC5751DFE = {
+			isa = PBXBuildFile;
+			fileRef = DB4267477E774B1EB19224BC;
+		};
+		647E7164A06FF71518326D10 = {
+			isa = PBXGroup;
+			children = (
+				F9E7EA1BE0224B14C04DA5ED,
+				723564C7EB71E7246DF209C8,
+				42FCFD3423041C1C7A26C62D,
+				7360566B49A1C5517659DBB6,
+				57E82F282011E365C42005C1,
+				DB4267477E774B1EB19224BC,
+				E4B6F0A2FF68591A4D130DEB,
+				850AE0AEFE9C2D583129C3E6,
+				995E34ABEEE881A58BFB655B,
+				769428F0F53B7F7949D1730D,
+				18DAA906FE39BBD095D03371,
+				0110F7C7479EE091FE91C5DA,
+				77936B128A58AFA226549BD0,
+				13546A2F2E54AD5C84052525,
+			);
+			name = Core;
+			sourceTree = "<group>";
+		};
+		64B0D3DC3D1A52347AB8A8AE = {
+			isa = PBXBuildFile;
+			fileRef = 9D28941E8647B1B90B85BE3F;
+		};
+		64F8A663F954590DD466B5FF = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			path = VoyagerCalcTests.xctest;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		689BCD3BC668450BCDA7E4D5 = {
+			isa = PBXBuildFile;
+			fileRef = C2B2A857A0669303B5DBDB12;
+		};
+		68EA6AA583496D92BBE76EAE = {
+			isa = PBXBuildFile;
+			fileRef = 1C17F86AA2286E812D464F07;
+		};
+		6B9FDF39167CB7B4FBA6AAB8 = {
+			isa = PBXBuildFile;
+			fileRef = 18DAA906FE39BBD095D03371;
+		};
+		6E2D55618A70C2952357CCE5 = {
+			isa = PBXBuildFile;
+			fileRef = 769428F0F53B7F7949D1730D;
+		};
+		6F2DEE74F879DFAF4CD97400 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ModelSwitchTests.swift;
+			path = Tests/KitTests/ModelSwitchTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		6F8C01E4C97CC986C6F9834E = {
+			isa = PBXFileReference;
+			lastKnownFileType = "sourcecode.module-map";
+			name = module.modulemap;
+			path = ../core/include/module.modulemap;
+			sourceTree = SOURCE_ROOT;
+		};
+		6F9959F8C507376344D96011 = {
+			isa = PBXBuildFile;
+			fileRef = 580CBBF8F0E3D8E271429AF7;
+		};
+		71D3FF9765C57CFCF692DD58 = {
+			isa = PBXBuildFile;
+			fileRef = FF77BE7CFD837746F961E75E;
+		};
+		723564C7EB71E7246DF209C8 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = CalculatorLink.swift;
+			path = Sources/Core/CalculatorLink.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		7263985000E89973FB7022B2 = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1F205298CA170F71DA1F8061,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		735FF7E732DFB1F9E64CE970 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SWIFT_VERSION = 5.0;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../core/include";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../core/include";
+				GCC_C_LANGUAGE_STANDARD = c11;
+				CLANG_ENABLE_MODULES = YES;
+				MARKETING_VERSION = 0.6.4;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				PRODUCT_NAME = VoyagerCalcTests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josegonzalezdivasson.VoyagerCalc.tests;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "-";
+				DEVELOPMENT_TEAM = "";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks";
+				GCC_OPTIMIZATION_LEVEL = 2;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				ONLY_ACTIVE_ARCH = YES;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+			};
+			name = Debug;
+		};
+		7360566B49A1C5517659DBB6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = HP15CKeyGlyphs.swift;
+			path = Sources/Core/HP15CKeyGlyphs.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		762C5DA0E3D3EBA835726659 = {
+			isa = PBXBuildFile;
+			fileRef = 18DAA906FE39BBD095D03371;
+		};
+		769428F0F53B7F7949D1730D = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramDocument.swift;
+			path = Sources/Core/ProgramDocument.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		77936B128A58AFA226549BD0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = TrueTypeFont.swift;
+			path = Sources/Core/TrueTypeFont.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		77C7F2D790E18764A7C1E91E = {
+			isa = PBXBuildFile;
+			fileRef = BDBD736D12FAD5B8B319DBA9;
+		};
+		78293C213848B86FA7E3E3C8 = {
+			isa = PBXGroup;
+			children = (
+				01EE620E857A1D3BE7031713,
+				FA253C69BA71AD66580E061F,
+				93A33A1BCB62BC03081B214C,
+				8768F603ABD8987184FE2AD4,
+				EB90DFA2C8D48C4027AD486C,
+				997D138B0DF125927A5D4EBC,
+			);
+			name = Resources;
+			sourceTree = "<group>";
+		};
+		785A62F6730D915597ED2079 = {
+			isa = PBXGroup;
+			children = (
+				B93D9DA55F4FD1D301EBECDA,
+				237E6BD964CF982AAFB86A98,
+				2E0534FBA858AEDC693AD49B,
+				1C17F86AA2286E812D464F07,
+				3BD9890281AEFA5DF1B660CD,
+				C2B2A857A0669303B5DBDB12,
+				ECB36F032B52A7CF7EE95552,
+				FD94D6F2B5D517CC5A0EB7B9,
+				CDD1379317EEC3C525FF7FD0,
+				9329309CB045D4B91F4154BF,
+			);
+			name = Views;
+			sourceTree = "<group>";
+		};
+		78A375A78678B25F2578E764 = {
+			isa = PBXBuildFile;
+			fileRef = 77936B128A58AFA226549BD0;
+		};
+		78D6D32DCF1167F2E0667373 = {
+			isa = PBXBuildFile;
+			fileRef = EB90DFA2C8D48C4027AD486C;
+		};
+		7A680F6C10F68841D73B92F7 = {
+			isa = PBXBuildFile;
+			fileRef = FE7C6D00EBBD4C6D2F37D7F9;
+		};
+		80CF9263E245925954EFB976 = {
+			isa = PBXBuildFile;
+			fileRef = 995E34ABEEE881A58BFB655B;
+		};
+		850AE0AEFE9C2D583129C3E6 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Pool15.swift;
+			path = Sources/Core/Pool15.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		8699A42CD18361074F9B2845 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Pool15Tests.swift;
+			path = Tests/KitTests/Pool15Tests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		875C8C7C98D034564977B0B5 = {
+			isa = PBXBuildFile;
+			fileRef = C2B2A857A0669303B5DBDB12;
+		};
+		8768F603ABD8987184FE2AD4 = {
+			isa = PBXFileReference;
+			lastKnownFileType = text.plist.entitlements;
+			name = VoyagerCalc.entitlements;
+			path = Resources/macOS/VoyagerCalc.entitlements;
+			sourceTree = SOURCE_ROOT;
+		};
+		889C5751F52C87C468F2B17E = {
+			isa = PBXBuildFile;
+			fileRef = 1CE5DF216092179C52535476;
+		};
+		899F97A326F0CE2114EB283A = {
+			isa = PBXBuildFile;
+			fileRef = 850AE0AEFE9C2D583129C3E6;
+		};
+		8A48FD23A8F2C1A5C3134A10 = {
+			isa = PBXBuildFile;
+			fileRef = 1D62EC49570A79EF2509F35F;
+		};
+		8BD5DA0DB97268B3F7DBF298 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SWIFT_VERSION = 5.0;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../core/include";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../core/include";
+				GCC_C_LANGUAGE_STANDARD = c11;
+				CLANG_ENABLE_MODULES = YES;
+				MARKETING_VERSION = 0.6.4;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				PRODUCT_NAME = VoyagerCalc;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josegonzalezdivasson.VoyagerCalc;
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				INFOPLIST_FILE = Resources/iOS/Info.plist;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+			};
+			name = Release;
+		};
+		8C3F1E0AD56409BF9EF9DDE9 = {
+			isa = PBXBuildFile;
+			fileRef = 9BCA0C5D32E7FF0ACE209C83;
+		};
+		8C53C11879B210BF3A9D9277 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = internal.h;
+			path = ../core/src/internal.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		8C8AB9D81655E8E2ADBB8025 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = PhotoFace.swift;
+			path = Sources/Models/PhotoFace.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		8D53691D3E443BC7500EB14B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = LegendClickTests.swift;
+			path = Tests/KitTests/LegendClickTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		8E8FC73148128A3D7DDD9E51 = {
+			isa = PBXBuildFile;
+			fileRef = 1C17F86AA2286E812D464F07;
+		};
+		90571FCD4DE777DD8B458141 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = FontPDFTests.swift;
+			path = Tests/KitTests/FontPDFTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		920CD4D27DDD08302CED9DB8 = {
+			isa = PBXBuildFile;
+			fileRef = EDCA7607B007F56A9C5A3576;
+		};
+		9329309CB045D4B91F4154BF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = WelcomeView.swift;
+			path = Sources/Views/WelcomeView.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		93A33A1BCB62BC03081B214C = {
+			isa = PBXFileReference;
+			lastKnownFileType = text.plist.xml;
+			name = Info.plist;
+			path = Resources/iOS/Info.plist;
+			sourceTree = SOURCE_ROOT;
+		};
+		94518A007B821CA0F226E508 = {
+			isa = PBXBuildFile;
+			fileRef = 2488AC708C9DC26D88CCC488;
+		};
+		96F510753FD3A7093C49977E = {
+			isa = PBXBuildFile;
+			fileRef = B93D9DA55F4FD1D301EBECDA;
+		};
+		995E34ABEEE881A58BFB655B = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramAnalysis.swift;
+			path = Sources/Core/ProgramAnalysis.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		997D138B0DF125927A5D4EBC = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder.assetcatalog;
+			name = Assets.xcassets;
+			path = Resources/iOS/Assets.xcassets;
+			sourceTree = SOURCE_ROOT;
+		};
+		99F15C7070B36624BF3B9E2D = {
+			isa = PBXBuildFile;
+			fileRef = ECB36F032B52A7CF7EE95552;
+		};
+		9A7DDF381D987A0A1FDFBC2E = {
+			isa = PBXBuildFile;
+			fileRef = CDD1379317EEC3C525FF7FD0;
+		};
+		9BCA0C5D32E7FF0ACE209C83 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = KeyChords.swift;
+			path = Sources/Models/KeyChords.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		9D28941E8647B1B90B85BE3F = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramDocModel.swift;
+			path = Sources/App/ProgramDocModel.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		9D85B0AEBBD288A35BCDEDE0 = {
+			isa = PBXBuildFile;
+			fileRef = 46DAAD26704CE28F6A90E298;
+		};
+		9E1E38C92A461A5C997B1CB3 = {
+			isa = PBXBuildFile;
+			fileRef = 1D62EC49570A79EF2509F35F;
+		};
+		9FEC8AA4824542E52BD9A6F7 = {
+			isa = PBXBuildFile;
+			fileRef = 723564C7EB71E7246DF209C8;
+		};
+		A038664771C196643C26BD61 = {
+			isa = PBXBuildFile;
+			fileRef = A2189B56850B71845656BB05;
+		};
+		A1C288E5ED4BB76C94004444 = {
+			isa = PBXBuildFile;
+			fileRef = 1C17F86AA2286E812D464F07;
+		};
+		A2189B56850B71845656BB05 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = machine.c;
+			path = ../core/src/machine.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		A25E3078528FB8CE669B1AF0 = {
+			isa = PBXBuildFile;
+			fileRef = 116F203AFBD2C5384BDEFAC9;
+		};
+		A2ECB73F760D999A025553F7 = {
+			isa = PBXBuildFile;
+			fileRef = 1DB2007D79AC7360447C1952;
+		};
+		A4A81C27C7E9B36BAC43F82B = {
+			isa = PBXBuildFile;
+			fileRef = 13546A2F2E54AD5C84052525;
+		};
+		A684EAC39E1163195CBC5563 = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				735FF7E732DFB1F9E64CE970,
+				253A57F5FF11D8AEBAE07752,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A6912AC693B64DA258A7E12C = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = AppModel.swift;
+			path = Sources/App/AppModel.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		A889BDE61CDC45D1950973BE = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = DocFontStore.swift;
+			path = Sources/App/DocFontStore.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		AAD2B137AC37DBD2D00E295C = {
+			isa = PBXBuildFile;
+			fileRef = 8699A42CD18361074F9B2845;
+		};
+		AB5EC449D644CF06C21910B4 = {
+			isa = PBXBuildFile;
+			fileRef = 850AE0AEFE9C2D583129C3E6;
+		};
+		ABA7E5C88E3EB203A06DA3AC = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				SWIFT_VERSION = 5.0;
+				SWIFT_INCLUDE_PATHS = "$(SRCROOT)/../core/include";
+				HEADER_SEARCH_PATHS = "$(SRCROOT)/../core/include";
+				GCC_C_LANGUAGE_STANDARD = c11;
+				CLANG_ENABLE_MODULES = YES;
+				MARKETING_VERSION = 0.6.4;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				PRODUCT_NAME = VoyagerCalc;
+				PRODUCT_BUNDLE_IDENTIFIER = com.josegonzalezdivasson.VoyagerCalc;
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				INFOPLIST_FILE = Resources/macOS/Info.plist;
+				CODE_SIGN_ENTITLEMENTS = Resources/macOS/VoyagerCalc.entitlements;
+				CODE_SIGN_STYLE = Manual;
+				CODE_SIGN_IDENTITY = "-";
+				DEVELOPMENT_TEAM = "";
+				ENABLE_HARDENED_RUNTIME = YES;
+				COMBINE_HIDPI_IMAGES = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				GCC_OPTIMIZATION_LEVEL = 2;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+			};
+			name = Release;
+		};
+		ACF4947FB4FB6C803300C109 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AE8D87A2F3A4A82050F2820A = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = PhotoFaceGeometry.swift;
+			path = Sources/Models/PhotoFaceGeometry.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		AFEAAA983BF37F335E721EBB = {
+			isa = PBXBuildFile;
+			fileRef = 9BCA0C5D32E7FF0ACE209C83;
+		};
+		B0BF09ACB2E5F28B1CBF5584 = {
+			isa = PBXBuildFile;
+			fileRef = 9D28941E8647B1B90B85BE3F;
+		};
+		B0D1EE850A4747625A960D20 = {
+			isa = PBXBuildFile;
+			fileRef = 13546A2F2E54AD5C84052525;
+		};
+		B1A0A1B7BBBA96936F638ACB = {
+			isa = PBXBuildFile;
+			fileRef = 90571FCD4DE777DD8B458141;
+		};
+		B2F0CCA35069B0CB898ED275 = {
+			isa = PBXBuildFile;
+			fileRef = 13546A2F2E54AD5C84052525;
+		};
+		B3D1E2881A7004CDBD847821 = {
+			isa = PBXBuildFile;
+			fileRef = AE8D87A2F3A4A82050F2820A;
+		};
+		B493CFB5F0917D5918F37E9E = {
+			isa = PBXBuildFile;
+			fileRef = FD94D6F2B5D517CC5A0EB7B9;
+		};
+		B4B4EBAD9C7044CF79B9669A = {
+			isa = PBXBuildFile;
+			fileRef = 2E0534FBA858AEDC693AD49B;
+		};
+		B514B577FAAB1EB315F359BB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = cpu.h;
+			path = ../core/src/cpu.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		B54993486D32E3FEE1D229BC = {
+			isa = PBXBuildFile;
+			fileRef = DB4267477E774B1EB19224BC;
+		};
+		B63B64D1C0EB0D35CF8513A7 = {
+			isa = PBXBuildFile;
+			fileRef = 56BA1FF3F43CC0D55A4A6EAF;
+		};
+		B84C9E15FEBD65F858099C4D = {
+			isa = PBXBuildFile;
+			fileRef = D0A8CC101E87685A10934A58;
+		};
+		B8917169D9FE92185A359A1C = {
+			isa = PBXBuildFile;
+			fileRef = B93D9DA55F4FD1D301EBECDA;
+		};
+		B8D254D4656D073A1214BF72 = {
+			isa = PBXBuildFile;
+			fileRef = EDCA7607B007F56A9C5A3576;
+		};
+		B93D9DA55F4FD1D301EBECDA = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = CalculatorView.swift;
+			path = Sources/Views/CalculatorView.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		BB37367D9BD14587FFB1764F = {
+			isa = PBXBuildFile;
+			fileRef = 9329309CB045D4B91F4154BF;
+		};
+		BDBD736D12FAD5B8B319DBA9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = CalculatorLinkTests.swift;
+			path = Tests/KitTests/CalculatorLinkTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		BE607B716A293F5EC372DA58 = {
+			isa = PBXBuildFile;
+			fileRef = 77936B128A58AFA226549BD0;
+		};
+		BF455B356A1D657E33F7C588 = {
+			isa = PBXBuildFile;
+			fileRef = 6F2DEE74F879DFAF4CD97400;
+		};
+		C040CF67CE8D146F8FBF3D8F = {
+			isa = PBXBuildFile;
+			fileRef = 7360566B49A1C5517659DBB6;
+		};
+		C185EE11C4BB187EDB51FB1E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = SnapshotTests.swift;
+			path = Tests/AppTests/SnapshotTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		C2B2A857A0669303B5DBDB12 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Palette.swift;
+			path = Sources/Views/Palette.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		C2BE3F3EE98964561A508B43 = {
+			isa = PBXBuildFile;
+			fileRef = 9329309CB045D4B91F4154BF;
+		};
+		C2D6C98101C84C3704EF2E45 = {
+			isa = PBXBuildFile;
+			fileRef = 769428F0F53B7F7949D1730D;
+		};
+		C626C362C5DF8F878F13E605 = {
+			isa = PBXBuildFile;
+			fileRef = 42FCFD3423041C1C7A26C62D;
+		};
+		C634D15AAD97D621473137C6 = {
+			isa = PBXBuildFile;
+			fileRef = 42FCFD3423041C1C7A26C62D;
+		};
+		C63E64E3C3E65B28CCC6EBC4 = {
+			isa = PBXBuildFile;
+			fileRef = 10CADC6398D1884D2E3B7BBE;
+		};
+		C87EDC2F134E3DACE8C7D418 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				170D484BC52458DF377D2CAC,
+				0A1AA2FF225250FF487CA910,
+				0DF861632636C2F345DFC520,
+				B8D254D4656D073A1214BF72,
+				8A48FD23A8F2C1A5C3134A10,
+				64B0D3DC3D1A52347AB8A8AE,
+				E7F52A6B679AB8600CEE532F,
+				C9E5042598944AD72D4BB6CB,
+				44144B9ADD90F839210B3C08,
+				55B91FB3C88BF7307924DB97,
+				E1FD2D403A023B432F4747C8,
+				A1C288E5ED4BB76C94004444,
+				F01E669D2154A92C88335570,
+				22D75762EE3A774A4BB22130,
+				D93FCF48B54967AD7E87503E,
+				4B03526D2478D17AC727FF3C,
+				357BA217F0A070BF3359E177,
+				1F04C4CAC74C753A8CBAE332,
+				D74EB6146533CF47C8D56DF2,
+				ED5A2172C1C47ADE095C7320,
+				44BDF878FD934CE33377CF5C,
+				C9B49FAA4C1D9390B710E885,
+				D42F5D734E79135416D36E0C,
+				B54993486D32E3FEE1D229BC,
+				2DFAB37B0C3E2CE454281448,
+				AB5EC449D644CF06C21910B4,
+				80CF9263E245925954EFB976,
+				6E2D55618A70C2952357CCE5,
+				762C5DA0E3D3EBA835726659,
+				612C6853680B3B8F8EF051A5,
+				78A375A78678B25F2578E764,
+				B2F0CCA35069B0CB898ED275,
+				9D85B0AEBBD288A35BCDEDE0,
+				8C3F1E0AD56409BF9EF9DDE9,
+				FD76F4754DEE5144E9ABA818,
+				6F9959F8C507376344D96011,
+				94518A007B821CA0F226E508,
+				5AC5A9305D34A6E5DA14F886,
+				FBFF0E369B36180C7A17C923,
+				B3D1E2881A7004CDBD847821,
+				DFF9A727C6164688B5FD8E58,
+				889C5751F52C87C468F2B17E,
+				71D3FF9765C57CFCF692DD58,
+				CC0B3413C5183AF779691754,
+				F2D5095594DB497FCAFFE139,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C9B49FAA4C1D9390B710E885 = {
+			isa = PBXBuildFile;
+			fileRef = 7360566B49A1C5517659DBB6;
+		};
+		C9E5042598944AD72D4BB6CB = {
+			isa = PBXBuildFile;
+			fileRef = 56BA1FF3F43CC0D55A4A6EAF;
+		};
+		CA384DD4AF6C471D0CF4752C = {
+			isa = PBXBuildFile;
+			fileRef = 995E34ABEEE881A58BFB655B;
+		};
+		CB276DF96369AA027173D802 = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		CB3F5F19EA017B8F9FF2F045 = {
+			isa = PBXBuildFile;
+			fileRef = AE8D87A2F3A4A82050F2820A;
+		};
+		CBCFED6DE0DC3EC35D797C92 = {
+			isa = PBXBuildFile;
+			fileRef = C185EE11C4BB187EDB51FB1E;
+		};
+		CC0B3413C5183AF779691754 = {
+			isa = PBXBuildFile;
+			fileRef = A2189B56850B71845656BB05;
+		};
+		CC60BC16D2FF636868E2EE45 = {
+			isa = PBXBuildFile;
+			fileRef = 46DAAD26704CE28F6A90E298;
+		};
+		CD1EF441A026E02D365D713F = {
+			isa = PBXBuildFile;
+			fileRef = AE8D87A2F3A4A82050F2820A;
+		};
+		CDD1379317EEC3C525FF7FD0 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramInfoView.swift;
+			path = Sources/Views/ProgramInfoView.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		D0A8CC101E87685A10934A58 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = KeyZones.swift;
+			path = Sources/Models/KeyZones.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		D124483EF0233AEE30ED7A11 = {
+			isa = PBXGroup;
+			children = (
+				46DAAD26704CE28F6A90E298,
+				9BCA0C5D32E7FF0ACE209C83,
+				D0A8CC101E87685A10934A58,
+				580CBBF8F0E3D8E271429AF7,
+				2488AC708C9DC26D88CCC488,
+				15C33C40C9EA933B52D6B9BA,
+				8C8AB9D81655E8E2ADBB8025,
+				AE8D87A2F3A4A82050F2820A,
+				1DB2007D79AC7360447C1952,
+			);
+			name = Models;
+			sourceTree = "<group>";
+		};
+		D234D858F0D4BBF9015606C1 = {
+			isa = PBXBuildFile;
+			fileRef = 9BCA0C5D32E7FF0ACE209C83;
+		};
+		D23E782D2BA1F2E2B547F81E = {
+			isa = PBXBuildFile;
+			fileRef = 0110F7C7479EE091FE91C5DA;
+		};
+		D42F5D734E79135416D36E0C = {
+			isa = PBXBuildFile;
+			fileRef = 57E82F282011E365C42005C1;
+		};
+		D4731EED954B5C4DFB82D586 = {
+			isa = PBXBuildFile;
+			fileRef = 1DB2007D79AC7360447C1952;
+		};
+		D4C03244D9D178FD1F5EEC28 = {
+			isa = PBXBuildFile;
+			fileRef = 3BD9890281AEFA5DF1B660CD;
+		};
+		D641F48BF3201C6BFEFD8EFB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = ProgramPointerTests.swift;
+			path = Tests/KitTests/ProgramPointerTests.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		D74EB6146533CF47C8D56DF2 = {
+			isa = PBXBuildFile;
+			fileRef = F9E7EA1BE0224B14C04DA5ED;
+		};
+		D78A6A6F4624785DD9B170D7 = {
+			isa = PBXBuildFile;
+			fileRef = 46DAAD26704CE28F6A90E298;
+		};
+		D9136B036A8C03CD2EA1D9FB = {
+			isa = PBXBuildFile;
+			fileRef = 580CBBF8F0E3D8E271429AF7;
+		};
+		D93FCF48B54967AD7E87503E = {
+			isa = PBXBuildFile;
+			fileRef = ECB36F032B52A7CF7EE95552;
+		};
+		DAFC450E21001F7660F2F40F = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = VoyagerCalc.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		DB4267477E774B1EB19224BC = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = PDFFontMetrics.swift;
+			path = Sources/Core/PDFFontMetrics.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		DDD2D18926FA768D94B60EFF = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = sha256.c;
+			path = ../core/src/sha256.c;
+			sourceTree = SOURCE_ROOT;
+		};
+		DEC06DC10BC1557761A76A47 = {
+			isa = PBXBuildFile;
+			fileRef = DDD2D18926FA768D94B60EFF;
+		};
+		DFF9A727C6164688B5FD8E58 = {
+			isa = PBXBuildFile;
+			fileRef = 1DB2007D79AC7360447C1952;
+		};
+		DFFAF71AC490A16D3BDA11EF = {
+			isa = PBXBuildFile;
+			fileRef = A889BDE61CDC45D1950973BE;
+		};
+		E15AFCCBF1442F35EAEB1350 = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2DDE0C4A784B9C331CFC1254;
+			buildPhases = (
+				C87EDC2F134E3DACE8C7D418,
+				ACF4947FB4FB6C803300C109,
+				07397A2F99A50B879619D1E8,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = "VoyagerCalc-macOS";
+			productName = VoyagerCalc;
+			productReference = F2F95540D2A3F3DB273E8922;
+			productType = "com.apple.product-type.application";
+		};
+		E1FD2D403A023B432F4747C8 = {
+			isa = PBXBuildFile;
+			fileRef = 2E0534FBA858AEDC693AD49B;
+		};
+		E29B3DD222763B6384989F41 = {
+			isa = PBXBuildFile;
+			fileRef = DB4267477E774B1EB19224BC;
+		};
+		E326099B5C104DECC694F8C4 = {
+			isa = PBXBuildFile;
+			fileRef = 7360566B49A1C5517659DBB6;
+		};
+		E4A2D118C015829DDEAA3077 = {
+			isa = PBXBuildFile;
+			fileRef = E4B6F0A2FF68591A4D130DEB;
+		};
+		E4B6F0A2FF68591A4D130DEB = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = PDFWriter.swift;
+			path = Sources/Core/PDFWriter.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		E703988179C090414B6597B9 = {
+			isa = PBXBuildFile;
+			fileRef = D0A8CC101E87685A10934A58;
+		};
+		E7F52A6B679AB8600CEE532F = {
+			isa = PBXBuildFile;
+			fileRef = FE7C6D00EBBD4C6D2F37D7F9;
+		};
+		E925FB4EC53ADACC8E5AE9D3 = {
+			isa = PBXBuildFile;
+			fileRef = 77936B128A58AFA226549BD0;
+		};
+		EACC89DFBDBC23F92C301936 = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		EB0DB3F23B8F61CC4E1E4CBC = {
+			isa = PBXBuildFile;
+			fileRef = 995E34ABEEE881A58BFB655B;
+		};
+		EB90DFA2C8D48C4027AD486C = {
+			isa = PBXFileReference;
+			lastKnownFileType = folder.assetcatalog;
+			name = Assets.xcassets;
+			path = Resources/macOS/Assets.xcassets;
+			sourceTree = SOURCE_ROOT;
+		};
+		ECB36F032B52A7CF7EE95552 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = PhotoFaceView.swift;
+			path = Sources/Views/PhotoFaceView.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		ED5A2172C1C47ADE095C7320 = {
+			isa = PBXBuildFile;
+			fileRef = 723564C7EB71E7246DF209C8;
+		};
+		EDCA7607B007F56A9C5A3576 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = HardwareKeyRouter.swift;
+			path = Sources/App/HardwareKeyRouter.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		EE0329E21E66BED128E77DAA = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A684EAC39E1163195CBC5563;
+			buildPhases = (
+				1D5DDAD49CFBBE1C23298DDB,
+				28E1019A40499A3E4BD7A1F1,
+				18DDDC84DB70534CD888F964,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = VoyagerCalcTests;
+			productName = VoyagerCalcTests;
+			productReference = 64F8A663F954590DD466B5FF;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		F01E669D2154A92C88335570 = {
+			isa = PBXBuildFile;
+			fileRef = 3BD9890281AEFA5DF1B660CD;
+		};
+		F2D5095594DB497FCAFFE139 = {
+			isa = PBXBuildFile;
+			fileRef = DDD2D18926FA768D94B60EFF;
+		};
+		F2F95540D2A3F3DB273E8922 = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.application;
+			includeInIndex = 0;
+			path = VoyagerCalc.app;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
+		F6B4E9840E6D19272280F9C2 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = optables.h;
+			path = ../core/src/optables.h;
+			sourceTree = SOURCE_ROOT;
+		};
+		F6C6CCFB1C73A9F50BC5BF2F = {
+			isa = PBXGroup;
+			children = (
+				1CE5DF216092179C52535476,
+				FF77BE7CFD837746F961E75E,
+				A2189B56850B71845656BB05,
+				DDD2D18926FA768D94B60EFF,
+				B514B577FAAB1EB315F359BB,
+				8C53C11879B210BF3A9D9277,
+				F6B4E9840E6D19272280F9C2,
+				5463692A99E3B0065B2B3569,
+				3CBED2631D247643FCEAC24C,
+				6F8C01E4C97CC986C6F9834E,
+			);
+			name = "C core (../core)";
+			sourceTree = "<group>";
+		};
+		F96CDA46AAD831784D626406 = {
+			isa = PBXBuildFile;
+			fileRef = 10CADC6398D1884D2E3B7BBE;
+		};
+		F9E7EA1BE0224B14C04DA5ED = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = CalculatorEngine.swift;
+			path = Sources/Core/CalculatorEngine.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		FA253C69BA71AD66580E061F = {
+			isa = PBXFileReference;
+			lastKnownFileType = text.plist.xml;
+			name = Info.plist;
+			path = Resources/macOS/Info.plist;
+			sourceTree = SOURCE_ROOT;
+		};
+		FBFF0E369B36180C7A17C923 = {
+			isa = PBXBuildFile;
+			fileRef = 8C8AB9D81655E8E2ADBB8025;
+		};
+		FC2141DF93AF7849BC1D21CC = {
+			isa = PBXBuildFile;
+			fileRef = 3E43AD280AEAF33CCF48749A;
+		};
+		FD76F4754DEE5144E9ABA818 = {
+			isa = PBXBuildFile;
+			fileRef = D0A8CC101E87685A10934A58;
+		};
+		FD94D6F2B5D517CC5A0EB7B9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = Pool15Views.swift;
+			path = Sources/Views/Pool15Views.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		FDA68A1D086543ADCF1C0AD8 = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				5FD25AC26B7096277A93B8F6,
+				DFFAF71AC490A16D3BDA11EF,
+				C63E64E3C3E65B28CCC6EBC4,
+				4974FEC715925E740C1E0F3C,
+				58A969BFC521C620FDEBB2E4,
+				4FD2B40A6B0707D97AF9F39F,
+				7A680F6C10F68841D73B92F7,
+				B63B64D1C0EB0D35CF8513A7,
+				96F510753FD3A7093C49977E,
+				49DF56DD5C5F890CC5DF716E,
+				B4B4EBAD9C7044CF79B9669A,
+				8E8FC73148128A3D7DDD9E51,
+				D4C03244D9D178FD1F5EEC28,
+				689BCD3BC668450BCDA7E4D5,
+				99F15C7070B36624BF3B9E2D,
+				1740C76E09DF200B5F79EF28,
+				2AF11A6BF00102800817FFF4,
+				C2BE3F3EE98964561A508B43,
+				36D80EB1B02BAC0E061A0B9B,
+				9FEC8AA4824542E52BD9A6F7,
+				C634D15AAD97D621473137C6,
+				C040CF67CE8D146F8FBF3D8F,
+				4177A5E40D4896F13C677FF1,
+				E29B3DD222763B6384989F41,
+				E4A2D118C015829DDEAA3077,
+				899F97A326F0CE2114EB283A,
+				EB0DB3F23B8F61CC4E1E4CBC,
+				4AACAF328C02D4C121E361EF,
+				5CD67879D13C1C867E9BFECB,
+				D23E782D2BA1F2E2B547F81E,
+				BE607B716A293F5EC372DA58,
+				A4A81C27C7E9B36BAC43F82B,
+				CC60BC16D2FF636868E2EE45,
+				AFEAAA983BF37F335E721EBB,
+				B84C9E15FEBD65F858099C4D,
+				D9136B036A8C03CD2EA1D9FB,
+				25D6C9CF91722B5576707E3D,
+				3A6E9BC12E1850D756B75859,
+				0A22E9FD5D5A08D98677D13F,
+				CB3F5F19EA017B8F9FF2F045,
+				D4731EED954B5C4DFB82D586,
+				4211D33A1C7DCD4FE0F41672,
+				1143AC6FD830ED8EFDCEAA8A,
+				3CD754881291C9FFD5BE73DC,
+				35A6805E7E2B600A9A7EC369,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FE7C6D00EBBD4C6D2F37D7F9 = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.swift;
+			name = USBHIDTransport.swift;
+			path = Sources/App/USBHIDTransport.swift;
+			sourceTree = SOURCE_ROOT;
+		};
+		FF77BE7CFD837746F961E75E = {
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = inspect.c;
+			path = ../core/src/inspect.c;
+			sourceTree = SOURCE_ROOT;
+		};
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595;
+}

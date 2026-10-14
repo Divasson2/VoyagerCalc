@@ -1,0 +1,7 @@
+1 ENTER 1 +
+f 0
+2 1 4 7 4 8 3 6 4 7 GSB A
+DEC 7 ENTER 3 / 2 * HEX 5 CHS g x<>y
+1 2 3 4 5 STO 1 RCL 1 f ENTER 1 ENTER +
+g R/S 1 + g R/S
+f E 1 ENTER 2 +

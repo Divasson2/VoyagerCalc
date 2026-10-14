@@ -1,0 +1,29 @@
+# Xcode / build output
+build/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcarchive
+.build/
+.swiftpm/
+core/build/
+# macOS
+.DS_Store
+._*
+# never commit: firmware, ROMs, memory dumps, signing material, fonts without a redistribution licence
+*.bin
+*.rom
+*.15c
+*.16c
+*.12c
+*.p12
+*.cer
+*.mobileprovision
+*.provisionprofile
+*.ttf
+*.otf
+*.zip
+# Python
+__pycache__/
+*.pyc
+*.pkl

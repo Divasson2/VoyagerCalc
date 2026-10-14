@@ -1,0 +1,21 @@
+{
+ "_note": "HP badge square (x, y, w, h) in pixels on work/rect_<model>.png (2000 px wide), measured by the dark-square detector in make_faces.py (measure_badge) and checked by eye; the three-panel logo is painted over exactly this square.",
+ "12c": [
+  1739,
+  82,
+  148,
+  148
+ ],
+ "15c": [
+  1740,
+  90,
+  147,
+  147
+ ],
+ "16c": [
+  1742,
+  89,
+  147,
+  147
+ ]
+}

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Diagnostic build for Jose's own USB tests: no App Sandbox (like VoyagerInterface).
+	     Build with CODE_SIGN_ENTITLEMENTS=Resources/macOS/VoyagerCalc-nosandbox.entitlements. -->
+	<key>com.apple.security.device.usb</key><true/>
+</dict>
+</plist>
