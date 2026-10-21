@@ -127,10 +127,17 @@ def main():
         if m in badges and max(abs(a - b) for a, b in zip(found, badges[m])) > 3:
             print(m, 'badge measured at', found, 'but badges.json says', badges[m], '- using badges.json')
         badge = badges.get(m, found)
+        # 0.6.5: each face shows only the model it belongs to (that model's panel lit, no HP logo)
+        globals()['LOGO'] = os.path.join(ART, 'icon', f'emblem-{m}-1024.png')
         bgr = replace_badge(np.ascontiguousarray(bgr), badge)
         face = np.dstack([bgr, alpha])
         cv2.imwrite(os.path.join(ART, 'faces', f'face_{m}.png'), face, [cv2.IMWRITE_PNG_COMPRESSION, 9])
         nol = clean_lcd(bgr, meas['lcd_px'])
+        if m == '12c':       # 0.6.9 (Jose approved, 12C only): isolated dust specks are inpainted (tools/dust_clean.py); the 15C / 16C faces are left as they are
+            import dust_clean
+            dust_mask, _specks = dust_clean.detect(nol, alpha, 6.0, 80, meas['lcd_px'], badge, 3.0)
+            nol = cv2.inpaint(nol, dust_mask, 3, cv2.INPAINT_TELEA)
+            print(m, 'dust specks removed:', len(_specks))
         cv2.imwrite(os.path.join(ART, 'faces', f'face_{m}_nolcd.png'), np.dstack([nol, alpha]), [cv2.IMWRITE_PNG_COMPRESSION, 9])
         geo[m] = dict(source=fn, rectify=info, size=[W, H], badge_px=badge, lcd=meas['lcd'], lcd_px=meas['lcd_px'],
                       lcd_source=meas['lcd_source'], keys_filled_from_grid=meas['filled_from_grid'],

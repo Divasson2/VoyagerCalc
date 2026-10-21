@@ -4,7 +4,7 @@ A small C program library that **runs your own HP-16C CE firmware file on a simu
 calculator chip**, without Unicorn and without any HP code inside. It is the engine for the
 planned Mac calculator app.
 
-Licence: **MIT** (see "Licence" below).
+Written by Cody for José, 2026-10-10. Licence: **MIT** (see "Licence" below).
 
 ## In plain words
 

@@ -172,8 +172,9 @@ int main(int argc, char **argv) {
     int r = vc_load_firmware(c, fw, n); free(fw);
     vc_set_battery(c, battery);
     printf("firmware: %s  (%s)\n", fwp, vc_firmware_info(c));
+    if (vc_firmware_checksum(c) >= 0) printf("checksum: %02X%02X%s\n", vc_firmware_checksum(c), vc_firmware_checksum(c), vc_firmware_stripped(c) ? "   (full flash dump: first 0x4000 bytes dropped)" : "");
     if (r) die("firmware", c);
-    if (info) { printf("program runner: yes   whole-calculator model: yes\n"); return 0; }
+    if (info) { printf("program runner: %s   whole-calculator model: yes\n", vc_firmware_family(c) == VC_FAMILY_STOCK ? "no" : "yes"); return 0; }
     uint8_t *mem = NULL;
     if (load) { size_t m; mem = readfile(load, &m); if (!mem || m != VC_MEMORY_SIZE) die("a .16c memory file must be exactly 2048 bytes", NULL); }
     if (proto) { protocol(c, proto, mem, max_steps, whole); vc_destroy(c); free(mem); return 0; }

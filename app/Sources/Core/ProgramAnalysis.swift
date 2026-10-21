@@ -86,7 +86,8 @@ public struct ProgramAnalysis: Equatable, Sendable {
                 if model == 12, op == "GTO", a.count == 2, let n = Int(a) {
                     let k = label(a); labs[k]!.called.append(step)
                     if !labs[k]!.callKinds.contains("GTO") { labs[k]!.callKinds.append("GTO") }
-                    if n >= 1, n <= lines.count, labs[k]!.defined.isEmpty { labs[k]!.defined = [n] }
+                    // line 00 always exists (the top of program memory, 0.6.9); other lines only when the program reaches them
+                    if n == 0 || (n >= 1 && n <= lines.count), labs[k]!.defined.isEmpty { labs[k]!.defined = [n] }
                     continue
                 }
                 if a == "I" || a == "(i)" {

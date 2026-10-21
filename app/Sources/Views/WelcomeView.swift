@@ -13,7 +13,7 @@ struct WelcomeView: View {
                 Text("VoyagerCalc")
                     .font(.system(size: 34, weight: .bold, design: .rounded))
                     .foregroundColor(Color(rgb: 0xE3A63A))
-                Text("This app runs the firmware of your own CE calculator (12C, 15C or 16C, including multi-model builds). No firmware comes with the app.")
+                Text("This app runs the firmware of your own CE calculator (12C, 15C or 16C, including multi-model builds), or HP's original 12C firmware with limits. No firmware comes with the app.")
                     .multilineTextAlignment(.center)
                     .foregroundColor(.white.opacity(0.9))
                     .frame(maxWidth: 460)
@@ -57,11 +57,18 @@ struct AboutView: View {
             Text("Version \(version)").foregroundColor(.secondary)
             Text("A calculator app that emulates the ARM chip of the CE calculators and runs the firmware file you supply.")
             if let fw = app.firmwareName {
-                Text("Firmware: \(fw)\n\(app.firmwareInfo)").font(.callout).foregroundColor(.secondary)
+                Text("Firmware: \(fw)\n\(app.firmwareInfo)" + (app.firmwareChecksum.map { "\nChecksum \($0)" } ?? "")).font(.callout).foregroundColor(.secondary)
+            }
+            if app.isStock {
+                Divider()
+                Text("HP's original 12C firmware").font(.callout.bold())
+                Text(AppModel.stockLimits).font(.callout).foregroundColor(.secondary)
             }
             Divider()
             Text("Copyright © 2026 José González Divassón. MIT License.")
                 .font(.callout)
+            Text(DocFontStore.credit)
+                .font(.callout).foregroundColor(.secondary)
             Text("Not affiliated with, endorsed by or sponsored by HP Inc. Model numbers are used only to say which firmware the app works with.")
                 .font(.callout).foregroundColor(.secondary)
             HStack {

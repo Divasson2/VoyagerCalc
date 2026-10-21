@@ -292,7 +292,7 @@ final class SnapshotTests: XCTestCase {
         guard let fw = Fixtures.hp15c3ROM else { throw XCTSkip("no C8C8 15C firmware") }
         let m = CalculatorMachine(); try m.loadFirmware(fw); try m.boot(restoring: nil)
         if m.variant != 150 { try m.switchModel(to: 150) }
-        try m.putMemory(try Fixtures.data("pool15/v150_34_sf8_with_matrices.bin"))
+        try m.putMemory(try Data(contentsOf: Fixtures.fixturesDir.appendingPathComponent("pool15/v150_34_sf8_with_matrices.bin")))
         try typeKeys(m, "1 ENTER 2 f TAN 5 ENTER 6 f TAN", model: 15)
         let s = try XCTUnwrap(m.calc.inspect())
         XCTAssertTrue(s.isComplex)
@@ -349,7 +349,7 @@ final class SnapshotTests: XCTestCase {
         try render(CalculatorFace(model: .hp16c, lcd: l16, pressed: [], layout: .landscape), width: 1000, height: 617, name: "mac-16c.png")
         try render(CalculatorFace(model: .hp15c, lcd: l15, pressed: [], layout: .landscape), width: 1000, height: 617, name: "mac-15c.png")
         try render(CalculatorFace(model: .hp12c, lcd: l12, pressed: [], layout: .landscape), width: 1000, height: 617, name: "mac-12c.png")
-        try render(CalculatorFace(model: .hp16c, lcd: l16, pressed: [25], layout: .landscape, turbo: true), width: 760, height: 469, name: "mac-16c-small-turbo-enter-pressed.png")
+        try render(CalculatorFace(model: .hp16c, lcd: l16, pressed: [25], layout: .landscape), width: 760, height: 469, name: "mac-16c-small-enter-pressed.png")
         try render(CalculatorFace(model: .hp16c, lcd: l16, pressed: [], layout: .portrait), width: 393, height: 852, name: "iphone-16c-portrait.png")
         try render(CalculatorFace(model: .hp12c, lcd: l12, pressed: [], layout: .portrait), width: 393, height: 852, name: "iphone-12c-portrait.png")
         // photo faces (the default face): live display over the empty glass, pressed keys
@@ -359,8 +359,8 @@ final class SnapshotTests: XCTestCase {
             try render(PhotoCalculatorFace(model: model, face: face, lcd: l, pressed: []),
                        width: 1000, height: 1000 / face.aspect, name: "mac-\(model.name.lowercased())-photo.png")
         }
-        try render(PhotoCalculatorFace(model: .hp16c, face: .hp16c, lcd: l16, pressed: [25, 31], turbo: true),
-                   width: 760, height: 760 / PhotoFace.hp16c.aspect, name: "mac-16c-photo-small-turbo-enter-f-pressed.png")
+        try render(PhotoCalculatorFace(model: .hp16c, face: .hp16c, lcd: l16, pressed: [25, 31]),
+                   width: 760, height: 760 / PhotoFace.hp16c.aspect, name: "mac-16c-photo-small-enter-f-pressed.png")
         try render(PhotoCalculatorFace(model: .hp16c, face: .hp16c, lcd: l16, pressed: []), width: 852, height: 393,
                    name: "iphone-16c-landscape-photo.png")
         try render(LCDView(lcd: l16, model: .hp16c), width: 600, height: 110, name: "lcd-16c.png")

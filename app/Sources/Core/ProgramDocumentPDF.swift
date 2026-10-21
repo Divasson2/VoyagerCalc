@@ -24,8 +24,8 @@ public enum ProgramDocumentPDF {
         }
     }
 
-    /// `fonts`: the user's own HP 15C key-cap font and seven-segment display font, when available
-    /// (0.5.7); the display font is used for the Display column of every model, the key caps for
+    /// `fonts`: the HP 15C key-cap font and seven-segment display font, when available (0.5.7;
+    /// bundled with the app since 0.6.7, so the app always passes them); the display font is used for the Display column of every model, the key caps for
     /// the 15C's Keys column. Without them the standard fonts are used, as in 0.5.6.
     public static func render(_ c: ProgramDocumentContent, paper: PDFPaper = .a4, fonts: PDFFontSet? = nil) -> Data {
         var r = Renderer(content: c, paper: paper, fonts: fonts ?? PDFFontSet())

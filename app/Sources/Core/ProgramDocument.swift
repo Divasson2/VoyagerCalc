@@ -248,11 +248,15 @@ public struct ProgramDocumentContent: Sendable {
         public var isLabel: Bool
     }
 
+    /// Heading of the 12C's branch-target section (text export; the PDF writes it in sentence case).
+    public static let branchTargetsTitle = "BRANCH TARGETS"
+
     public var labelRows: [LabelRow] {
         analysis.labels.map { l in
             var called = steps(l.called)
             if !l.callKinds.isEmpty, !l.called.isEmpty { called += " (" + l.callKinds.joined(separator: ", ") + ")" }
-            let defined = l.defined.isEmpty ? (l.isIndirect ? "computed in I" : "not defined") : steps(l.defined)
+            var defined = l.defined.isEmpty ? (l.isIndirect ? "computed in I" : "not defined") : steps(l.defined)
+            if info.model == 12, !l.isIndirect, l.defined == [0] { defined = "00 (start)" }       // line 00 always exists (0.6.9)
             let name = info.model == 12 && !l.isIndirect ? "line \(l.name)" : (l.isIndirect ? l.name : "LBL \(l.name)")
             return LabelRow(label: name, notes: doc.labels[l.name] ?? "", defined: defined, called: called.isEmpty ? "—" : called)
         }
@@ -300,7 +304,11 @@ public struct ProgramDocumentContent: Sendable {
             o.append(fmt(head)); o.append(fmt(w.map { String(repeating: "-", count: $0) }))
             rows.forEach { o.append(fmt($0)) }
         }
-        if !labelRows.isEmpty {
+        if info.model == 12 {      // 0.6.9: the 12C text export always has the section, named as in the PDF
+            o += ["", Self.branchTargetsTitle, ""]
+            if labelRows.isEmpty { o.append("No GTO in this program.") }
+            else { table(["Line", "Defined", "Called from", "Notes"], labelRows.map { [$0.label, $0.defined, $0.called, $0.notes] }) }
+        } else if !labelRows.isEmpty {
             o += ["", "LABELS", ""]
             table(["Label", "Defined", "Called from", "Notes"], labelRows.map { [$0.label, $0.defined, $0.called, $0.notes] })
         }

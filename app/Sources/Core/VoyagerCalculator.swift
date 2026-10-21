@@ -9,6 +9,9 @@ import VoyagerCore
 
 public enum CalculatorError: Error, LocalizedError, Equatable {
     case firmware(String)
+    /// Recognised but not available: an original-layout firmware that has not been verified, or a feature HP's original firmware
+    /// does not offer (memory files). The text says so in plain words.
+    case unsupported(String)
     case state(String)
     case fault(String)
     case argument(String)
@@ -16,6 +19,7 @@ public enum CalculatorError: Error, LocalizedError, Equatable {
     public var errorDescription: String? {
         switch self {
         case .firmware(let s): return s
+        case .unsupported(let s): return s
         case .state(let s): return s
         case .fault(let s): return "The emulated chip stopped: \(s)"
         case .argument(let s): return s
@@ -39,12 +43,29 @@ public struct LCDState: Equatable, Sendable {
 
     /// Lit annunciator labels for a model.
     public func annunciators(for model: CalculatorModel) -> [Annunciator] {
-        model.annunciators.filter { annunciatorBits >> UInt64($0.bit) & 1 == 1 }
+        model.annunciators.filter { $0.isLit(annunciatorBits) }
     }
 }
 
 public enum CalculatorFamily: Int, Sendable {
     case none = 0, hp12c = 12, hp15c = 15, hp16c = 16, multi = 99
+    /// HP's original firmware layout (the 2015 HP-12C): runs, with limits (see `FirmwareCapabilities`).
+    case stock = 98
+}
+
+/// What a loaded firmware supports (0.6.6). HP's original 12C runs keyboard and display only: its RAM
+/// layout differs from the CE builds, so the inspector, memory files and the model switch do not apply.
+public struct FirmwareCapabilities: OptionSet, Sendable {
+    public let rawValue: Int
+    public init(rawValue: Int) { self.rawValue = rawValue }
+    public static let keysDisplay = FirmwareCapabilities(rawValue: 1 << 0)
+    /// Registers & Program (stack, registers, program listing read from the Continuous Memory image).
+    public static let inspect = FirmwareCapabilities(rawValue: 1 << 1)
+    /// Memory files (VoyagerSave image): open, save, USB transfer, memory kept between launches.
+    public static let memory = FirmwareCapabilities(rawValue: 1 << 2)
+    /// The firmware reports which calculator runs, so the model follows its own switch.
+    public static let modelSwitch = FirmwareCapabilities(rawValue: 1 << 3)
+    public static let all: FirmwareCapabilities = [.keysDisplay, .inspect, .memory, .modelSwitch]
 }
 
 public final class VoyagerCalculator {
@@ -55,6 +76,8 @@ public final class VoyagerCalculator {
     public init() {
         guard let h = vc_create() else { fatalError("vc_create failed (out of memory)") }
         handle = h
+        // 0.7.1: real 15C CE speed (the core default VC_IPC_REFERENCE 0.75 ran programs ~30 % fast at 4 MHz).
+        vc_set_clock_ipc(h, VC_IPC_REAL)
     }
     deinit { vc_destroy(handle) }
 
@@ -65,6 +88,7 @@ public final class VoyagerCalculator {
         if v >= 0 { return }
         switch v {
         case Int(VC_ERR_FIRMWARE): throw CalculatorError.firmware(lastError)
+        case Int(VC_ERR_UNSUPPORTED): throw CalculatorError.unsupported(lastError)
         case Int(VC_ERR_STATE): throw CalculatorError.state(lastError)
         case Int(VC_ERR_FAULT): throw CalculatorError.fault(lastError)
         default: throw CalculatorError.argument(lastError)
@@ -81,11 +105,22 @@ public final class VoyagerCalculator {
     }
 
     public var family: CalculatorFamily { CalculatorFamily(rawValue: Int(vc_firmware_family(handle))) ?? .none }
+    /// What this firmware supports; empty without firmware.
+    public var capabilities: FirmwareCapabilities { FirmwareCapabilities(rawValue: Int(vc_capabilities(handle))) }
+    /// Diagnostics (tests): a 32-bit word of the emulated chip's memory.
+    public func debugRead32(_ address: UInt32) -> UInt32 { vc_debug_read32(handle, address) }
     /// Active model: 12, 15 or 16. Follows the calculator's own model switch.
     public var model: Int { Int(vc_model(handle)) }
     /// 120, 150, 152 (15C long memory) or 160.
     public var variant: Int { Int(vc_model_variant(handle)) }
     public var firmwareInfo: String { String(cString: vc_firmware_info(handle)) }
+    /// The checksum the calculator shows as XYXY ("C8C8"), nil when the image is too short.
+    public var firmwareChecksum: String? {
+        let v = Int(vc_firmware_checksum(handle))
+        return v >= 0 ? String(format: "%02X%02X", v, v) : nil
+    }
+    /// Bytes dropped from the front of the file: 0x4000 when it was a full flash dump (bootloader first).
+    public var firmwareBytesDropped: Int { Int(vc_firmware_stripped(handle)) }
     /// Calculator images in the firmware (120, 150, 152, 160), in the order of the calculator's
     /// own model menu; one for single-image firmware, empty without firmware.
     public var firmwareImages: [Int] {
@@ -133,6 +168,37 @@ public final class VoyagerCalculator {
         }
         let buf = [UInt8](data)
         try check(vc_load_memory(handle, buf))
+    }
+
+    // MARK: 16C memory layouts (standard / extended B7B7 = E8E8 / early E3E3)
+
+    /// Result of the structural pre-check of a memory image against the running firmware
+    /// (vc_memory_precheck). A trial load cannot see a layout mismatch: the firmware accepts it
+    /// and the registers just read wrong, so this runs first.
+    public struct MemoryLayoutCheck: Equatable, Sendable {
+        public enum Verdict: Int, Sendable { case ok = 0, warn = 1, convert = 2 }
+        public var verdict: Verdict
+        public var message: String
+    }
+
+    /// ARM instructions per CPU clock (vc_set_clock_ipc): the apps run at VC_IPC_REAL (0.577).
+    public var clockIPC: Double { vc_clock_ipc(handle) }
+
+    public func precheckMemory(_ data: Data) -> MemoryLayoutCheck? {
+        guard data.count == Self.memorySize else { return nil }
+        var chk = vc_memcheck()
+        let buf = [UInt8](data)
+        guard vc_memory_precheck(handle, buf, &chk) == Int32(VC_OK) else { return nil }
+        let msg = withUnsafeBytes(of: chk.message) { raw in String(decoding: raw.prefix { $0 != 0 }, as: UTF8.self) }
+        return MemoryLayoutCheck(verdict: MemoryLayoutCheck.Verdict(rawValue: Int(chk.verdict)) ?? .ok, message: msg)
+    }
+
+    /// An image saved on the early extended-memory multi (E3E3: pool 8 bytes later) in the layout of
+    /// B7B7 / E8E8, or nil when the image is not in the E3E3 layout.
+    public static func convertE3E3Memory(_ data: Data) -> Data? {
+        guard data.count == memorySize else { return nil }
+        var buf = [UInt8](data)
+        return vc_memory_convert_e3e3(&buf) == 1 ? Data(buf) : nil
     }
 
     // MARK: display

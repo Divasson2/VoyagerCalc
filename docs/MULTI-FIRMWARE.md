@@ -67,3 +67,24 @@ The core loads them as 15C family and `vc_model()` follows their switch as well 
   not depend on the skin; only legends and the hardware-keyboard map change.
 * Saved memory files: a `.16c` file only makes sense in 16C mode; the app names files by the
   active model (`.12c`, `.15c`, `.16c`) and warns before loading one into another mode.
+
+## 16C memory layouts (2026-10-18; core API `vc_mem16_layout`, `vc_firmware_mem16`, `vc_memory_precheck`, `vc_memory_convert_e3e3`)
+
+The 2 KB 16C memory image has three layouts, all the same size, so a wrong one loads without an error and reads wrong:
+
+| Layout | Pool | Firmware |
+|--------|------|----------|
+| `VC_MEM16_STD` | 29 registers (203 B) at dump 0x6F0 | stock 16C CE, multi E5E5 / E6E6 |
+| `VC_MEM16_EXT` | 176 registers (1232 B) at dump 0x168 | 16C CE B5B5 / B7B7 and the multi **E8E8** (identical: images move both ways) |
+| `VC_MEM16_EXT_E3E3` | the same pool at 0x170 (8 bytes later) | multi E3E3 only |
+
+* The core finds the layout from the firmware itself (Nut ROM word 0x1D4 = 0x15C means extended memory; in a multi the first
+  register-address site at flash 0x1318A is `add.w` (0xEB02) in E3E3 and a branch to a cave in E8E8). `vc_inspect_info` reports
+  `mem_layout` and `pool_offset`; the inspector, listings and PDFs use them, so they read right on every firmware.
+* `vc_memory_layout(image)` guesses an image's layout from where its data sits (standard: only 0x6F0..0x7D7; extended: only
+  0x168..0x6EF; E3E3: first slot 0x168..0x16F empty / program top in 0x6E8..0x6EF; empty pool areas = fits all). One undecidable
+  case: an extended image with R0 = 0 and no program is taken as B7B7 layout.
+* `vc_memory_precheck(calc, image)` compares it with the running 16C layout: OK, WARN (another layout; message for the user) or
+  CONVERT (E3E3 image on a B7B7-layout firmware). Both apps run it before the trial load (`checkMemory` cannot see this
+  mismatch); on CONVERT they convert (`vc_memory_convert_e3e3`: pool 8 bytes down) and carry on.
+* Tests: `core/tests/test_mem16.c`.

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 José González Divassón
 //
-// 0.5.7: the user's HP 15C key-cap and display fonts in the documentation PDF.
-// The fonts are not part of the repository; the tests look in $VC_FONT_DIR, art/fonts
-// (Jose's renamed copies) and ~/Firmware/Fonts, and skip when they are not there.
+// 0.5.7: the HP 15C key-cap and display fonts in the documentation PDF.
+// 0.6.7: the two fonts (renamed copies: key caps by Eric Rechlin, display by Torsten Manz) are part of the repository and the app:
+// the tests read them from app/Resources/Fonts (the bundled files), then $VC_FONT_DIR, art/fonts, ~/Firmware/Fonts.
 
 import XCTest
 #if canImport(VoyagerKit)
@@ -15,6 +15,7 @@ final class FontPDFTests: XCTestCase {
         var d: [URL] = []
         if let e = ProcessInfo.processInfo.environment["VC_FONT_DIR"] { d.append(URL(fileURLWithPath: e)) }
         let here = URL(fileURLWithPath: #filePath)
+        d.append(here.deletingLastPathComponent().appendingPathComponent("../../Resources/Fonts").standardized)
         d.append(here.deletingLastPathComponent().appendingPathComponent("../../../art/fonts").standardized)
         var home = URL(fileURLWithPath: NSHomeDirectory())
         #if os(macOS)
@@ -28,7 +29,7 @@ final class FontPDFTests: XCTestCase {
             let u = dir.appendingPathComponent(name)
             if let data = try? Data(contentsOf: u) { return try TrueTypeFont(data: data) }
         }
-        throw XCTSkip("\(name) not found (the user's own font)")
+        throw XCTSkip("\(name) not found")
     }
     static func keys() throws -> TrueTypeFont { try font("HP15CSimulatorKeys.ttf") }
     static func display() throws -> TrueTypeFont { try font("HP15CSimulatorDisplay.ttf") }

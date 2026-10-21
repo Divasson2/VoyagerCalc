@@ -2,7 +2,7 @@
 // Copyright (c) 2026 José González Divassón
 //
 // CalculatorEngine.swift - runs a CalculatorMachine on its own thread, in real time
-// (10 ms of calculator time per 10 ms of wall time) or as fast as it can (turbo).
+// always in real time: 10 ms of calculator time per 10 ms of wall time (0.7.1: Turbo removed).
 // The UI sends commands and gets display snapshots on the main queue.
 
 import Foundation
@@ -31,7 +31,6 @@ public final class CalculatorEngine: @unchecked Sendable {
         case chordWithON([Int])
         case loadMemory(Data, @MainActor (Error?) -> Void)
         case saveState(@MainActor (Result<SavedState, Error>) -> Void)
-        case setTurbo(Bool)
         /// Publish InspectorSnapshots (registers, program) while true, at most 10 times a second.
         case setInspector(Bool)
         /// Run a closure on the engine thread with the machine (for blocking saves etc.).
@@ -50,7 +49,6 @@ public final class CalculatorEngine: @unchecked Sendable {
     private let lock = NSLock()
     private var queue: [Command] = []
     private var thread: Thread?
-    private var turbo = false
     private var running = false
     private var last = EngineSnapshot()
     private var inspector = false
@@ -120,7 +118,6 @@ public final class CalculatorEngine: @unchecked Sendable {
             case .saveState(let done):
                 let r = Result { try machine.savedState() }
                 onMain { done(r) }
-            case .setTurbo(let on): turbo = on
             case .setInspector(let on): inspector = on; lastInspection = nil; inspect(force: true)
             case .perform(let body): body(machine)
             case .stop: return false
@@ -155,7 +152,7 @@ public final class CalculatorEngine: @unchecked Sendable {
     }
 
     /// Read the registers and program (read-only, does not touch the calculator's timing),
-    /// throttled to inspectorInterval so turbo is not slowed down.
+    /// throttled to inspectorInterval.
     private func inspect(force: Bool = false) {
         guard inspector else { return }
         let now = DispatchTime.now().uptimeNanoseconds
@@ -178,22 +175,15 @@ public final class CalculatorEngine: @unchecked Sendable {
             if !running { break }
             if failed { _ = wake.wait(timeout: .now() + .milliseconds(200)); continue }
             do {
-                if turbo {
-                    // as fast as possible, but look at keys and the display every ~20 ms
-                    let t0 = DispatchTime.now().uptimeNanoseconds
-                    repeat { try machine.run(ms: 10) } while DispatchTime.now().uptimeNanoseconds - t0 < 20_000_000
-                    next = DispatchTime.now().uptimeNanoseconds
-                } else {
-                    let now = DispatchTime.now().uptimeNanoseconds
-                    if now < next {
-                        // wait for the next 10 ms slot; a command wakes us early to apply it
-                        _ = wake.wait(timeout: DispatchTime(uptimeNanoseconds: next))
-                        continue
-                    }
-                    if now - next > 250_000_000 { next = now }   // fell behind (e.g. Mac asleep): no catch-up race
-                    try machine.run(ms: 10)
-                    next += tick
+                let now = DispatchTime.now().uptimeNanoseconds
+                if now < next {
+                    // wait for the next 10 ms slot; a command wakes us early to apply it
+                    _ = wake.wait(timeout: DispatchTime(uptimeNanoseconds: next))
+                    continue
                 }
+                if now - next > 250_000_000 { next = now }   // fell behind (e.g. Mac asleep): no catch-up race
+                try machine.run(ms: 10)
+                next += tick
             } catch {
                 failed = true
                 report(error)

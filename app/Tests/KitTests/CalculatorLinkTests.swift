@@ -259,7 +259,7 @@ final class CalculatorLinkTests: XCTestCase {
     // MARK: real memory files (regression: 0.5.1 rejected Jose's FinancePac)
 
     static func fixture(_ name: String) throws -> Data {
-        let d = try Fixtures.data(name)
+        let d = try Data(contentsOf: Fixtures.fixturesDir.appendingPathComponent(name))
         XCTAssertEqual(d.count, 2048, name)
         return d
     }
@@ -363,7 +363,7 @@ final class CalculatorLinkTests: XCTestCase {
     /// with flag 8 clear: the flag is a CPU status bit (0x4C bit 3), and the whole CPU state was kept.
     func testWriteCarriesFlag8() throws {
         let empty = try Self.fixture("E3E3-152-empty-usb-read.15c")
-        let cx = try Fixtures.data("pool15/v152_81_prog_dimA_cx_dim25.bin")
+        let cx = try Data(contentsOf: Fixtures.fixturesDir.appendingPathComponent("pool15/v152_81_prog_dimA_cx_dim25.bin"))
         XCTAssertTrue(CalculatorLink.flag8(cx)); XCTAssertFalse(CalculatorLink.flag8(empty))
         let f = FakeCalculator(memory: [UInt8](empty)); f.stopsOnCPUStateChange = true
         let back = [UInt8](try link(f).writeMemory(cx, flag8: true))

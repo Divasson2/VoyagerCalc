@@ -1,53 +1,47 @@
 # VoyagerCalc
 
-A macOS app (SwiftUI) that runs the firmware of an HP-12C, HP-15C or HP-16C Collector's Edition
-calculator, which **you supply yourself**, on a native emulator of the calculator's ARM chip. It
-adds an inspector (stack, registers, flags, the 15C memory pool and matrices, the program listing),
-program documentation as PDF or text, and reading and writing the memory of a real calculator over USB.
+Calculator app for macOS, iPadOS and iOS that runs your own 12C / 15C / 16C CE firmware on
+a native emulator of the calculator's ARM chip. MIT licence (`LICENSE`).
+Not affiliated with HP Inc.
 
-> **Disclaimer.** VoyagerCalc is an independent project. It is not affiliated with, authorised or
-> endorsed by HP Inc. or Moravia. HP, HP-12C, HP-15C, HP-16C and other names are trademarks of
-> their respective owners and are used only to describe compatibility. The software is provided
-> "as is", without warranty of any kind; use it at your own risk, including when writing to a
-> real calculator (the app makes a backup of the calculator's memory first).
+## 0.7.1 (Mac)
 
-## No HP firmware included
+Real-speed timing (Turbo removed), 15C Matrix Editor with spreadsheet paste, option to make clicks on the
+f/g legends act as f/g + key, key click sound, lighter 15C/16C LCD, opaque inspector section headers,
+shared self-test display, and a key-focus fix.
 
-This repository and the app contain **no HP firmware, ROM images or memory dumps** and no
-third-party programs. On first launch the app asks for a firmware file (`.bin`) that you have
-the right to use, for example one taken from your own calculator. The app remembers your choice.
+This repository holds the source only. The notarized Mac download is distributed separately (no binaries,
+firmware, ROMs or memory dumps are published here; you supply your own calculator firmware).
 
-Optional fonts for the documentation PDF (Torsten Manz's freeware *HP15C Simulator* display font
-and an HP 15C key-cap font) are not included either, because they have no redistribution licence.
-If you have them, choose them in **File ▸ PDF Fonts**; the HP15C Simulator font is available from
-Torsten Manz's HP-15C Simulator website. Without them the PDF uses system fonts.
+* `core/`: the portable C core (Cortex-M4 + SAM4L model), CLI and tests. See `core/README.md`.
+* `app/`: the SwiftUI app and Xcode project. See `app/README.md` (how to open and run it).
+* `Package.swift`: core + Swift wrapper + model data as a Swift package (`swift test`, also on Linux).
+* `art/`: photo faces made from the shop's product photos: originals, sources (`art/SOURCES.md`), pipeline (`art/README.md`).
+* `docs/`: reports (multi firmware). `screens/`: screenshots. `PROGRESS.md`: status.
 
-## Download and install
+> **HP logo badge: done (0.5).** The HP badge at the top right of each photo face is covered by
+> the app's own three-panel logo (12C / 15C / 16C, `art/icon/AppIcon-square-1024.png`; painted
+> by `art/tools/make_faces.py`, square in `art/tools/badges.json`).
+> **Still before any App Store submission:** the 15C and 16C faces still carry HP's
+> "Collector's Edition" script under the logo, and the key layout/legends are HP's design;
+> decide what to do with those, and confirm the rights to the 15C CE / 16C CE front pictures
+> (see `art/SOURCES.md`).
 
-1. Download `VoyagerCalc-<version>-macOS.zip` from the
-   [Releases](https://github.com/Divasson2/VoyagerCalc/releases) page.
-2. Unzip it and move **VoyagerCalc.app** to **Applications**.
-3. Open it and choose your firmware file.
+Keys: click a key for the key, its gold legend above for f + key, its blue legend on the key's
+front for g + key (e.g. the gold LBL over SST, then A = f LBL A). ⌘-click / right-click latches
+a key (Mac), long-press latches it (iOS). Keyboard: Shift alone = f, Option alone = g,
+Option + key = g + key.
 
-Requires macOS 14 or later.
+Program documentation (0.5.6): double-click a line in the inspector's program list to comment it;
+File ▸ Program Info… for the title, description and label / register / flag notes (labels,
+registers and flags used are detected from the program); File ▸ Export Program Documentation
+(PDF)… (A4 or US Letter) or Export Listing as Text…. Notes are saved as "<memory file>.voyagerdoc"
+next to the memory file (File ▸ Save / Open Program Notes…). The 12C program is listed too.
 
-## Build from source
+**PDF fonts (0.5.7, bundled in 0.6.7):** the documentation PDF shows the program display in seven segments and the
+15C keystrokes as key caps. Since 0.6.7 the two HP15C Simulator fonts (display and key caps) are part of the app
+(Contents/Resources, `app/Resources/Fonts/`) and the PDF always uses them; there is nothing to install or choose.
 
-Requirements: a Mac with Xcode 15 or later.
-
-1. Clone the repository: `git clone https://github.com/Divasson2/VoyagerCalc.git`
-2. Open `app/VoyagerCalc.xcodeproj` in Xcode (keep the whole folder: the project uses `core/`).
-3. Choose the scheme **VoyagerCalc-macOS** and **My Mac**, then press **⌘R**. The project signs to run
-   locally, so no developer team is needed.
-4. Tests: **⌘U**. Tests that need a firmware file or a memory image are skipped unless you point
-   `VC_FIRMWARE_DIR` / `VC_FIXTURES_DIR` at your own files.
-
-The C core can also be built and tested on its own (`core/`, see `core/README.md`), and
-`Package.swift` builds the core and model data as a Swift package.
-
-Layout: `core/` the portable emulator core, `app/` the SwiftUI app and Xcode project, `art/` the
-app icon and image tools, `docs/` technical notes (memory map of the HP-15C pool, USB link).
-
-## Licence
-
-MIT, see [LICENSE](LICENSE). Copyright (c) 2026 José González Divassón.
+**Fonts credit:** the documentation PDF fonts included with the app are the key-cap font by Eric Rechlin and the
+seven-segment display font by Torsten Manz (HP15C Simulator Font © 2005 Torsten Manz, Freeware). The files are renamed
+copies (name table only) and keep their copyright notices. See `art/fonts/README.md`.

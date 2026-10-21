@@ -15,7 +15,7 @@ final class MemoryDocTests: XCTestCase {
         guard let fw = Fixtures.hp15c3ROM else { throw XCTSkip("no C8C8 15C firmware") }
         let m = CalculatorMachine(); try m.loadFirmware(fw); try m.boot(restoring: nil)
         if m.variant != 150 { try m.switchModel(to: 150) }
-        try m.putMemory(try Fixtures.data("pool15/v150_50_prog_ops.bin"))
+        try m.putMemory(try Data(contentsOf: Fixtures.fixturesDir.appendingPathComponent("pool15/v150_50_prog_ops.bin")))
         // 2 ENTER 3 f DIM A   1 ENTER 2 f DIM B   f RESULT B   5 ENTER 6 f I
         for k in [27, 25, 28, 31, 12, 0, 26, 25, 27, 31, 12, 1, 31, 15, 1, 17, 25, 18, 31, 14] { try m.tap(k) }
         try m.run(ms: 500)

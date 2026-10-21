@@ -66,12 +66,12 @@ struct CalculatorView: View {
             let layout = forcedLayout ?? (geo.size.width >= geo.size.height * 1.05 ? .landscape : .portrait)
             if app.faceStyle == .photo, layout == .landscape, let face = app.model.photoFace {
                 PhotoCalculatorFace(model: app.model, face: face, lcd: app.snapshot.lcd, pressed: app.pressedKeys,
-                                    turbo: app.turbo, press: { app.press($0) }, release: { app.release($0) },
+                                    press: { app.press($0) }, release: { app.release($0) },
                                     pressPart: { app.press($0, part: $1) })
                     .frame(width: geo.size.width, height: geo.size.height)
             } else {
                 CalculatorFace(model: app.model, lcd: app.snapshot.lcd, pressed: app.pressedKeys,
-                               layout: layout, turbo: app.turbo, variant: app.snapshot.variant,
+                               layout: layout, variant: app.snapshot.variant,
                                press: { app.press($0) }, release: { app.release($0) },
                                pressPart: { app.press($0, part: $1) })
                     .frame(width: geo.size.width, height: geo.size.height)
@@ -88,7 +88,6 @@ struct CalculatorFace: View {
     let lcd: LCDState
     let pressed: Set<Int>
     let layout: KeyboardLayout
-    var turbo = false
     var variant = 0
     var press: (Int) -> Void = { _ in }
     var release: (Int) -> Void = { _ in }
@@ -160,13 +159,6 @@ struct CalculatorFace: View {
                     .font(.system(size: max(7, topH * (layout == .landscape ? 0.075 : 0.05)), weight: .semibold))
                     .tracking(1.5)
                     .foregroundColor(Color(rgb: c.band).opacity(0.8))
-                if turbo {
-                    Text("TURBO")
-                        .font(.system(size: max(7, topH * 0.07), weight: .heavy, design: .rounded))
-                        .foregroundColor(Color(rgb: c.fLegend))
-                        .padding(.horizontal, 4)
-                        .overlay(Capsule().stroke(Color(rgb: c.fLegend), lineWidth: 1))
-                }
             }
             .frame(width: layout == .landscape ? size.width * 0.22 : size.width * 0.5, alignment: .trailing)
             .offset(x: layout == .landscape ? size.width * 0.73 : size.width * 0.5 - pad * 2,

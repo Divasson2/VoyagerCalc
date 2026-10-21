@@ -72,6 +72,14 @@ public enum KeyChord: String, CaseIterable, Identifiable, Sendable {
 
     /// The 16C shows integers without a decimal point, so ON + . does nothing useful there.
     public func isAvailable(model: Int) -> Bool { self == .radixMark ? model != 16 : true }
+
+    /// With HP's original 12C firmware only the chords that were tried on it are offered: self-test (ON + ×),
+    /// memory reset (ON + −) and the decimal mark (ON + .). Its service menu is a different one (no model
+    /// switch, no USB), and the keyboard test and continuous self-test were not verified.
+    public func isAvailable(model: Int, family: CalculatorFamily) -> Bool {
+        if family == .stock { return self == .selfTest || self == .memoryReset || self == .radixMark }
+        return isAvailable(model: model)
+    }
 }
 
 /// Keys the user latched down to play a chord one key at a time. Pure logic: the app turns

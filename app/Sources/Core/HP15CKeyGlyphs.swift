@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 José González Divassón
 //
-// HP15CKeyGlyphs.swift - which character of the "HP 15C" key-cap font (HP_15c_v2.0.ttf, the
-// font the key map .docx is written in) draws each HP-15C key legend, by core key code
+// HP15CKeyGlyphs.swift - which character of the key-cap font (designed by Eric Rechlin; the file was
+// called HP_15c_v2.0.ttf, the font the key map .docx is written in) draws each HP-15C key legend, by core key code
 // (0..39, row by row as on the keyboard) and colour: primary (key face), gold (f) and blue (g).
 // Worked out by rendering the docx grids with the font (art/fonts/keymap-glyphs.png).
-// The font itself is not part of the app; it is read from the user's own copy.
+// The font (renamed copy HP15CSimulatorKeys.ttf, by Eric Rechlin) is part of the app bundle since 0.6.7.
 
 import Foundation
 

@@ -18,6 +18,7 @@ enum Fixtures {
         d.append(FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Firmware"))
         d.append(URL(fileURLWithPath: "/workspace/Firmware"))
         d.append(URL(fileURLWithPath: "/workspace"))
+        d += d.map { $0.appendingPathComponent("hp12c-user") }      // HP's original 12C, kept in its own subfolder (0.6.6)
         return d
     }
 
@@ -33,21 +34,14 @@ enum Fixtures {
 
     static var firmware16Ext: Data? { find(["Voyager16-ext-path-c-trim4-show-B7B7.bin"]) }
     static var multi: Data? { find(["HP12c-multi.bin"]) }
+    /// HP's original 2015 HP-12C firmware: only ever read from the user's own folder, for local checks. Never part of the repo.
+    static var stock12C: Data? { find(["HP12C_SAM4_01-30-2015.bin"]) }
     static var hp15c3ROM: Data? { find(["hp15c-3rom-mute120-fsm5-rel80-opt5cycle-debounce-menu-stopwatch-48fix-keys-batt-trim4-show-C8C8.bin"]) }
 
-    /// Memory images used by the tests. The public repository ships none (no third-party programs,
-    /// no dumps); point VC_FIXTURES_DIR (TEST_RUNNER_VC_FIXTURES_DIR for xcodebuild) at your own
-    /// folder, or the tests that need them are skipped.
     static var fixturesDir: URL {
-        if let e = ProcessInfo.processInfo.environment["VC_FIXTURES_DIR"], !e.isEmpty { return URL(fileURLWithPath: e) }
-        return URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Fixtures")
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Fixtures")
     }
-    static func data(_ name: String) throws -> Data {
-        let u = fixturesDir.appendingPathComponent(name)
-        guard let d = try? Data(contentsOf: u) else { throw XCTSkip("fixture \(name) not available") }
-        return d
-    }
-    static var millerRabin: Data { get throws { try data("miller-rabin-ext-ready.16c") } }
+    static var millerRabin: Data { (try? Data(contentsOf: fixturesDir.appendingPathComponent("miller-rabin-ext-ready.16c"))) ?? Data() }
 }
 
 final class ModelDataTests: XCTestCase {

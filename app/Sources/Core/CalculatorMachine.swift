@@ -50,6 +50,15 @@ public final class CalculatorMachine {
     /// The firmware has more than one calculator image to choose from.
     public var canSwitchModel: Bool { images.count > 1 }
 
+    /// What this firmware supports (HP's original 12C: keys and display only).
+    public var capabilities: FirmwareCapabilities { calc.capabilities }
+
+    /// The reason a memory image cannot be used with this firmware, nil when it can.
+    public var memoryUnavailableReason: String? {
+        capabilities.contains(.memory) ? nil
+            : "HP's original firmware keeps its memory in a different layout than the CE firmware, so memory files are not available with it."
+    }
+
     public var model: Int { calc.model }
     public var variant: Int { calc.variant }
 
@@ -159,7 +168,7 @@ public final class CalculatorMachine {
         simMs = 0; downSince = [:]; pendingRelease = []; delayedRelease = []
         try tap(Self.keyON); try run(ms: 1500)
         var note: String?
-        if let s = saved {
+        if let s = saved, capabilities.contains(.memory) {
             if s.firmwareID != firmwareID {
                 note = "The saved calculator memory belongs to another firmware; starting with a cleared memory."
             } else {
@@ -178,6 +187,7 @@ public final class CalculatorMachine {
     /// Load a 2 KB memory image into the running calculator and let the firmware take it
     /// (it is checked when the calculator turns on).
     public func putMemory(_ data: Data) throws {
+        if let why = memoryUnavailableReason { throw CalculatorError.unsupported(why) }
         try powerOn()
         try calc.loadMemory(data)
         try powerOff()
@@ -188,6 +198,7 @@ public final class CalculatorMachine {
     /// working registers in the CPU while it is on and writes them back when it turns off,
     /// so the calculator is turned off for the copy (and back on when `turnBackOn`).
     public func memory(turnBackOn: Bool = true) throws -> Data {
+        if let why = memoryUnavailableReason { throw CalculatorError.unsupported(why) }   // before the calculator is turned off
         let wasOn = !isBlank
         try powerOff()
         let d = try calc.saveMemory()
@@ -253,6 +264,21 @@ public final class CalculatorMachine {
         }
     }
 
+    /// Structural layout check of a 2 KB image against this firmware's 16C memory (standard 203 B,
+    /// extended B7B7 / E8E8, early E3E3), on a scratch machine. nil when it cannot be told.
+    public static func layoutCheck(_ mem: Data, firmware: Data, variant: Int) -> VoyagerCalculator.MemoryLayoutCheck? {
+        guard mem.count == VoyagerCalculator.memorySize else { return nil }
+        let m = CalculatorMachine()
+        do {
+            try m.loadFirmware(firmware)
+            try m.boot(restoring: nil)
+            if m.variant != variant { try m.switchModel(to: variant) }
+            return m.calc.precheckMemory(mem)
+        } catch {
+            return nil
+        }
+    }
+
     /// The models (variants) of this firmware whose memory the image is; 15.0 and 15.2 share
     /// their memory, so a 15C image gives both.
     /// HP-15C g MEM ("dd uu pp-b"), read while RCL is held, on a scratch machine. The 15.0
@@ -279,7 +305,10 @@ public final class CalculatorMachine {
     }
 
     /// The raw image right now, without turning the calculator off.
-    public func rawMemory() throws -> Data { try calc.saveMemory() }
+    public func rawMemory() throws -> Data {
+        if let why = memoryUnavailableReason { throw CalculatorError.unsupported(why) }
+        return try calc.saveMemory()
+    }
 
     public func savedState(turnBackOn: Bool = true) throws -> SavedState {
         SavedState(memory: try memory(turnBackOn: turnBackOn), variant: variant, firmwareID: firmwareID)

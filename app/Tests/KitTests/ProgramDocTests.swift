@@ -13,7 +13,7 @@ import XCTest
 final class ProgramDocTests: XCTestCase {
     static let e3e3 = ["HP12c-multi-152-ext16-E3E3.bin"]
 
-    static func fixture(_ n: String) throws -> Data { try Fixtures.data(n) }
+    static func fixture(_ n: String) throws -> Data { try Data(contentsOf: Fixtures.fixturesDir.appendingPathComponent(n)) }
 
     /// FinancePac (15.2) listed by the inspector's decoder.
     static func financePac() throws -> [ProgramLine] {

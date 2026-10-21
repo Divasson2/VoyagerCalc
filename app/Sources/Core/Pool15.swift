@@ -124,11 +124,9 @@ extension InspectorSnapshot {
     }
 }
 
-extension VoyagerCalculator {
-    func inspectPool15(into s: inout InspectorSnapshot) {
-        let h = rawHandle
-        var p = vc_pool15()
-        guard vc_inspect_pool15(h, &p) == Int32(VC_OK) else { return }
+extension Pool15 {
+    /// From the core's decoded pool (vc_inspect_pool15 / vc_image_pool15).
+    init(core p: vc_pool15) {
         var o = Pool15()
         o.variant = Int(p.variant); o.base = Int(p.base); o.top = Int(p.top); o.data = Int(p.data)
         o.starts = withUnsafeBytes(of: p.start) { Array($0.bindMemory(to: Int32.self)).map(Int.init) }
@@ -141,6 +139,16 @@ extension VoyagerCalculator {
         o.gmem = withUnsafeBytes(of: p.gmem) { raw in
             let b = raw.bindMemory(to: UInt8.self); return String(decoding: b.prefix { $0 != 0 }, as: UTF8.self)
         }
+        self = o
+    }
+}
+
+extension VoyagerCalculator {
+    func inspectPool15(into s: inout InspectorSnapshot) {
+        let h = rawHandle
+        var p = vc_pool15()
+        guard vc_inspect_pool15(h, &p) == Int32(VC_OK) else { return }
+        let o = Pool15(core: p)
         s.pool = o
         var v = vc_value()
         if o.complex {

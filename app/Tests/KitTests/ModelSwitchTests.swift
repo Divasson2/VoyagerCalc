@@ -130,7 +130,7 @@ final class ModelSwitchTests: XCTestCase {
     func testSelfTestChords() throws {
         try each { m, n in
             try m.perform(.selfTest); try settle(m, 4000)
-            XCTAssertTrue(m.displayText.contains("8,8,8,8,8,8,8,8.8.8."), "\(n) self-test: \(m.displayText)")
+            XCTAssertTrue(m.displayText.contains("-8,8,8,8,8,8,8,8,8,8,"), "\(n) self-test: \(m.displayText)")
             try m.powerOff()
             try m.perform(.keyboardTest); try settle(m, 500)
             XCTAssertTrue(m.displayText.contains("?"), "\(n) keyboard test: \(m.displayText)")

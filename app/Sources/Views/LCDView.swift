@@ -52,12 +52,7 @@ struct LCDView: View {
                 ctx.fill(Path(dot), with: .color(ink))
             }
             if i < lcd.commas.count, lcd.commas[i] {
-                var tail = Path()
-                tail.move(to: CGPoint(x: dot.maxX, y: dot.maxY))
-                tail.addLine(to: CGPoint(x: dot.maxX - dotSize * 0.2, y: dot.maxY + dotSize * 1.6))
-                tail.addLine(to: CGPoint(x: dot.minX - dotSize * 0.5, y: dot.maxY + dotSize * 1.6))
-                tail.addLine(to: CGPoint(x: dot.minX, y: dot.maxY))
-                tail.closeSubpath()
+                let tail = LCDView.commaTail(dot: dot)
                 ctx.fill(tail, with: .color(ink))
             }
         }
@@ -66,16 +61,48 @@ struct LCDView: View {
         let minus = segment(6, in: signRect)
         ctx.fill(minus, with: .color(lcd.minus ? ink : faint))
 
-        // annunciators
+        // annunciators: one fixed layout for every model (the glass is the same part); each lights only with its segment.
+        // The font shrinks until no label runs into the next one.
         let annY = top + digitH + size.height * 0.08
-        let fontSize = max(6, size.height * 0.15)
-        for a in model.annunciators {
-            let on = lcd.annunciatorBits >> UInt64(a.bit) & 1 == 1
-            let x = left + CGFloat(a.cell + 1) * cellW
-            let text = Text(a.label).font(.system(size: fontSize, weight: .semibold, design: .rounded))
-                .foregroundColor(on ? ink : faint)
-            ctx.draw(text, at: CGPoint(x: x, y: annY), anchor: .topLeading)
+        let anns = model.annunciators
+        var fontSize = max(6, size.height * 0.15)
+        var xs = [CGFloat](repeating: 0, count: anns.count)
+        func label(_ a: Annunciator, _ color: Color) -> Text {
+            Text(a.label).font(.system(size: fontSize, weight: .semibold, design: .rounded)).foregroundColor(color)
         }
+        for _ in 0..<12 {
+            var fits = true
+            for (i, a) in anns.enumerated() {
+                xs[i] = left + CGFloat(a.cell + 1) * cellW
+                guard i > 0 else { continue }
+                let prev = ctx.resolve(label(anns[i - 1], ink)).measure(in: size).width
+                if a.label == "RAD", anns[i - 1].label == "G" { xs[i] = xs[i - 1] + prev }
+                else if xs[i] < xs[i - 1] + prev + cellW * 0.08 { fits = false }
+            }
+            if fits || fontSize <= 4 { break }
+            fontSize = max(4, fontSize * 0.92)
+        }
+        for (i, a) in anns.enumerated() {
+            ctx.draw(label(a, a.isLit(lcd.annunciatorBits) ? ink : faint), at: CGPoint(x: xs[i], y: annY), anchor: .topLeading)
+        }
+    }
+
+    /// Tail of a comma (0.6.5), measured on a photo of the real glass: thin, slanting down-left, separated
+    /// from the dot by a hair, narrowing from about 0.78 dot widths at the top to a point at the bottom,
+    /// ending 0.86 dot heights below the dot. Points are in dot units (D = dot width), origin at the dot's
+    /// top-left corner, y down; the dot itself is drawn separately and unchanged.
+    static let commaTailPoints: [(x: CGFloat, y: CGFloat)] = [
+        (-0.10, 1.06), (0.66, 1.06), (0.12, 1.68), (-0.08, 1.86), (-0.30, 1.84), (-0.34, 1.66),
+    ]
+    static func commaTail(dot: CGRect) -> Path {
+        let d = dot.width
+        var path = Path()
+        for (i, pt) in commaTailPoints.enumerated() {
+            let p = CGPoint(x: dot.minX + pt.x * d, y: dot.minY + pt.y * d)
+            if i == 0 { path.move(to: p) } else { path.addLine(to: p) }
+        }
+        path.closeSubpath()
+        return path
     }
 
     /// Path of segment s (0 = a ... 6 = g) in a digit box, slanted like the Voyager LCD.

@@ -16,7 +16,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 extension AppModel {
-    private var docDefaultsKey: String { "programDoc." + (firmwareID.isEmpty ? "none" : String(firmwareID.prefix(16))) }
+    var docDefaultsKey: String { "programDoc." + (firmwareID.isEmpty ? "none" : String(firmwareID.prefix(16))) }
 
     func storeProgramDoc() {
         guard persistState else { return }
@@ -50,15 +50,16 @@ extension AppModel {
     func findSidecar(for url: URL) {
         memoryFileNameCandidate = url.lastPathComponent
         pendingSidecar = nil
-        let side = ProgramDocument.sidecarURL(for: url)
-        if let d = try? Data(contentsOf: side), let doc = try? ProgramDocument.decode(d) {
-            pendingSidecar = (doc, side)
+        for side in MemoryFileNames.sidecarCandidates(for: url) {      // the name itself, then the other memory endings (0.6.9)
+            if let d = try? Data(contentsOf: side), let doc = try? ProgramDocument.decode(d) {
+                pendingSidecar = (doc, side); break
+            }
         }
     }
 
     /// The memory from a file is in the calculator: take its notes if they were found.
     func memoryLoaded() {
-        if let name = memoryFileNameCandidate { memoryFileName = name }
+        if let name = memoryFileNameCandidate { memoryFileName = name; exportNames.forgetAll() }
         memoryFileNameCandidate = nil
         lastProgramKeys = []
         if let s = pendingSidecar {
@@ -73,6 +74,7 @@ extension AppModel {
 
     /// The current listing (also when the inspector is hidden), on the main actor.
     func fetchProgram(_ done: @escaping @MainActor (InspectorSnapshot?) -> Void) {
+        guard hasInspector else { stockUnavailable("Program documentation"); return done(nil) }
         guard let e = engine else { return done(nil) }
         e.send(.perform { m in
             let s = m.calc.inspect()
@@ -109,38 +111,10 @@ extension AppModel {
         }
     }
 
-    func openNotes() { importTask = .notes; showImporter = true }
-
-    // MARK: HP 15C fonts (0.5.7)
-
-    func reloadDocFonts() {
-        let store = docFontStore
-        DispatchQueue.global(qos: .utility).async {
-            let f = store.load()
-            DispatchQueue.main.async { self.docFonts = f }
-        }
+    func openNotes() {
+        guard hasInspector else { return stockUnavailable("Program notes") }
+        importTask = .notes; showImporter = true
     }
-
-    /// File ▸ Use HP 15C Fonts…: pick the folder with HP15CSimulatorKeys.ttf and
-    /// HP15CSimulatorDisplay.ttf (e.g. ~/Firmware/Fonts), or one of the font files.
-    func chooseDocFonts() { importTask = .fonts; showImporter = true }
-
-    func docFontsPicked(_ result: Result<URL, Error>) {
-        switch result {
-        case .failure(let e): errorMessage = e.localizedDescription
-        case .success(let url):
-            do {
-                let f = try docFontStore.remember(url)
-                docFonts = f
-                notice = f.any ? "The documentation PDF will use the \(f.summary)." :
-                    "No HP 15C fonts found in “\(url.lastPathComponent)”. Choose the folder that holds \(DocFontStore.keysFile) and \(DocFontStore.displayFile)."
-            } catch {
-                errorMessage = "“\(url.lastPathComponent)” is not one of the HP 15C fonts."
-            }
-        }
-    }
-
-    func forgetDocFonts() { docFontStore.forget(); reloadDocFonts() }
 
     func notesPicked(_ result: Result<URL, Error>) {
         switch result {
@@ -175,6 +149,7 @@ extension AppModel {
 
     /// File ▸ Save Program Notes…: "<memory file>.voyagerdoc", to keep next to the memory file.
     func saveNotes() {
+        guard hasInspector else { return stockUnavailable("Program notes") }
         do {
             let data = try programDoc.encoded()
             exportKind = .notes; exportType = .voyagerDoc
@@ -192,9 +167,8 @@ extension AppModel {
             let name = content.title + " documentation"
             let store = self.docFontStore
             DispatchQueue.global(qos: .userInitiated).async {
-                let fonts = store.load()           // read from the files every time (they may have been added)
+                let fonts = store.load()           // the two HP 15C Simulator fonts from the app bundle (0.6.7), always
                 let data = ProgramDocumentPDF.render(content, paper: paper, fonts: fonts.pdfSet())
-                DispatchQueue.main.async { self.docFonts = fonts }
                 DispatchQueue.main.async { MainActor.assumeIsolated {
                     self.exportKind = .pdf; self.exportType = .pdf
                     self.exportNameOverrideForDocs(name)
@@ -219,6 +193,20 @@ extension AppModel {
     func clearNotes() {
         programDoc = ProgramDocument()
         programDocURL = nil
+    }
+
+    /// A reset, a model switch or another firmware (0.6.9): nothing of the old program's notes is kept: all step comments, the orphans,
+    /// title, author, description and the label / register / flag notes, the sidecar link, the stored copy for this firmware and the
+    /// remembered memory file name.
+    func clearAllNotes(forgetStored: Bool) {
+        programDoc = ProgramDocument()
+        programDocURL = nil
+        pendingSidecar = nil
+        memoryFileNameCandidate = nil
+        memoryFileName = nil
+        lastProgramKeys = []
+        exportNames.forgetAll()
+        if forgetStored, persistState { UserDefaults.standard.removeObject(forKey: docDefaultsKey) }
     }
 
     // MARK: comments

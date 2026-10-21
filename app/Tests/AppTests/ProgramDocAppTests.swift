@@ -21,7 +21,7 @@ final class ProgramDocAppTests: XCTestCase {
 
     func testCommentsFollowTheProgramAndExport() async throws {
         guard let fw = Fixtures.hp15c3ROM else { throw XCTSkip("no C8C8") }
-        let fp = try Fixtures.data("FinancePac.15c")
+        let fp = try Data(contentsOf: Fixtures.fixturesDir.appendingPathComponent("FinancePac.15c"))
         let m = CalculatorMachine()
         try m.loadFirmware(fw); try m.boot(restoring: nil)
         if m.variant != 152 { try m.switchModel(to: 152) }

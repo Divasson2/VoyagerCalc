@@ -13,9 +13,12 @@ import AppKit
 struct HardwareKeyboardModifier: ViewModifier {
     let router: HardwareKeyRouter
     @State private var monitor: Any?
+    /// The calculator's own window (0.7.1 key-focus fix: keys typed in another window, such as the Matrix Editor, stay there).
+    @State private var home = WindowBox()
 
     func body(content: Content) -> some View {
         content
+            .background(WindowReader(box: home).frame(width: 0, height: 0))
             .onAppear { install() }
             .onDisappear { remove() }
     }
@@ -25,6 +28,9 @@ struct HardwareKeyboardModifier: ViewModifier {
         monitor = NSEvent.addLocalMonitorForEvents(matching: [.keyDown, .keyUp, .flagsChanged]) { event in
             // leave menu shortcuts and text fields (sheets, dialogs) alone
             if event.modifierFlags.contains(.command) { return event }
+            // another window has the keyboard (0.7.1): only key-ups still reach the router, so a key held while the
+            // focus moved is let go
+            if event.type != .keyUp, keyEventIsForOtherWindow(event.window, home: home.window) { return event }
             if let w = event.window, w.attachedSheet != nil || w.firstResponder is NSTextView || w.isSheet {
                 return event
             }
@@ -76,6 +82,30 @@ struct HardwareKeyboardModifier: ViewModifier {
         guard let c = chars?.first else { return nil }
         return .char(c)
     }
+}
+
+/// A weak reference to the window a view is in, filled by WindowReader.
+final class WindowBox {
+    weak var window: NSWindow?
+}
+
+/// Reports the NSWindow the view is placed in.
+struct WindowReader: NSViewRepresentable {
+    let box: WindowBox
+    func makeNSView(context: Context) -> NSView {
+        let v = Reader(); v.box = box; return v
+    }
+    func updateNSView(_ v: NSView, context: Context) { (v as? Reader)?.box = box; box.window = v.window ?? box.window }
+    final class Reader: NSView {
+        var box: WindowBox?
+        override func viewDidMoveToWindow() { super.viewDidMoveToWindow(); if let w = window { box?.window = w } }
+    }
+}
+
+/// Is this key event aimed at another window than `home` (tests)?
+func keyEventIsForOtherWindow(_ eventWindow: NSWindow?, home: NSWindow?) -> Bool {
+    guard let home else { return false }
+    return eventWindow !== home
 }
 
 #else

@@ -23,7 +23,7 @@ final class Pool15Tests: XCTestCase {
     }
     static func snapshot(_ dump: String, _ variant: Int) throws -> InspectorSnapshot {
         let m = try machine(variant)
-        try m.putMemory(try Fixtures.data("pool15/\(dump).bin"))
+        try m.putMemory(try Data(contentsOf: Fixtures.fixturesDir.appendingPathComponent("pool15/\(dump).bin")))
         return try XCTUnwrap(m.calc.inspect())
     }
 

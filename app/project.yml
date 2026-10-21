@@ -12,13 +12,13 @@ settings:
     HEADER_SEARCH_PATHS: $(SRCROOT)/../core/include
     GCC_C_LANGUAGE_STANDARD: c11
     GCC_OPTIMIZATION_LEVEL: "2"
-    MARKETING_VERSION: "0.5.6"
+    MARKETING_VERSION: "0.7.1"
     CURRENT_PROJECT_VERSION: "1"
 targets:
   VoyagerCalc-macOS:
     type: application
     platform: macOS
-    sources: [Sources, { path: ../core/src, name: C core }, { path: Resources/Faces, buildPhase: resources }, Resources/macOS/Assets.xcassets]
+    sources: [Sources, { path: ../core/src, name: C core }, { path: Resources/Faces, buildPhase: resources }, { path: Resources/Fonts, buildPhase: resources }, Resources/macOS/Assets.xcassets]
     settings:
       base:
         PRODUCT_NAME: VoyagerCalc
@@ -32,7 +32,7 @@ targets:
   VoyagerCalc-iOS:
     type: application
     platform: iOS
-    sources: [Sources, { path: ../core/src, name: C core }, { path: Resources/Faces, buildPhase: resources }, Resources/iOS/Assets.xcassets]
+    sources: [Sources, { path: ../core/src, name: C core }, { path: Resources/Faces, buildPhase: resources }, { path: Resources/Fonts, buildPhase: resources }, Resources/iOS/Assets.xcassets]
     settings:
       base:
         PRODUCT_NAME: VoyagerCalc
@@ -49,6 +49,7 @@ targets:
       - Tests/KitTests
       - Tests/AppTests
       - { path: Resources/Faces, buildPhase: resources }
+      - { path: Resources/Fonts, buildPhase: resources }
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

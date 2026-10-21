@@ -1,4 +1,4 @@
-# VoyagerCalc: the app
+# VoyagerCalc: the app (milestone 2)
 
 SwiftUI app for macOS, iPadOS and iOS. It runs your own CE firmware (12C, 15C or 16C,
 including multi-model builds) on the native C core in `../core`. MIT licence (`../LICENSE`).
@@ -6,7 +6,7 @@ No firmware and no HP artwork are included.
 
 ## Open and run it in Xcode (Mac)
 
-1. Open `app/VoyagerCalc.xcodeproj` in Xcode. Keep the whole
+1. Open `~/Developer/VoyagerCalc/app/VoyagerCalc.xcodeproj` in Xcode. Keep the whole
    `VoyagerCalc` folder: the project uses `../core`.
 2. At the top of the window, choose the scheme **VoyagerCalc-macOS** and **My Mac**.
 3. Press **⌘R**. The project is set to "Sign to Run Locally", so you do not need a team.
@@ -22,9 +22,8 @@ Files. To run it on your own iPhone, select the VoyagerCalc-iOS target, open
 
 ## Using it
 
-* **Face:** if photo faces are present in `Resources/Faces/` (not included in this repository), the
-  calculator is that photo with the live display drawn on its empty LCD glass; otherwise, and with
-  **Face → Drawn**, it is the app's own vector drawing. **Face → Drawn** in the menu switches to our own vector
+* **Face:** by default the calculator is the **product photo** (12C, 15C CE, 16C CE) with the live
+  display drawn on its empty LCD glass. **Face → Drawn** in the menu switches to our own vector
   drawing. On an **iPhone held upright** the app always shows the drawn face with the keyboard in
   two stacked halves, because the landscape photo would be too small to tap there. Turn the phone
   sideways to get the photo. Mac, iPad and iPhone in landscape use the photo.

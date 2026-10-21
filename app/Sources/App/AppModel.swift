@@ -2,7 +2,7 @@
 // Copyright (c) 2026 José González Divassón
 //
 // AppModel.swift - app state shared by the views and menus: firmware, the running
-// calculator, turbo, keyboard skin, face style (photo / drawn), memory files.
+// calculator, view options (f/g label clicks, key click), keyboard skin, face style (photo / drawn), memory files.
 
 import Foundation
 import SwiftUI
@@ -38,10 +38,10 @@ enum FaceStyle: String, CaseIterable, Identifiable {
     var title: String { self == .photo ? "Photo" : "Drawn" }
 }
 
-enum FileTask { case firmware, memory, notes, fonts }
+enum FileTask { case firmware, memory, notes }
 
 /// What the save panel is saving.
-enum ExportKind { case memory, notes, pdf, text }
+enum ExportKind: String { case memory, notes, pdf, text }
 
 /// Something that clears the calculator's memory, waiting for the user's confirmation.
 enum PendingAction: Equatable, Identifiable {
@@ -129,7 +129,10 @@ final class AppModel: ObservableObject {
     @Published private(set) var isStarting = false
     @Published private(set) var firmwareName: String?
     @Published private(set) var firmwareInfo = ""
+    @Published private(set) var firmwareChecksum: String?
     @Published private(set) var family: CalculatorFamily = .none
+    /// What the loaded firmware supports (HP's original 12C: keys and display only, 0.6.6).
+    @Published private(set) var capabilities: FirmwareCapabilities = .all
     @Published private(set) var pressedKeys: Set<Int> = []
     /// Keys latched down by ⌘-click / right-click (Mac) or a long press (iOS).
     @Published private(set) var latchedKeys: Set<Int> = []
@@ -141,9 +144,8 @@ final class AppModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var notice: String?
     @Published var importTask: FileTask = .firmware
-    /// The user's HP 15C fonts for the documentation PDF (0.5.7); never bundled.
+    /// The two HP 15C Simulator fonts of the documentation PDF: part of the app bundle since 0.6.7 (always used).
     let docFontStore = DocFontStore()
-    @Published var docFonts = DocFonts()
     @Published var showImporter = false
     @Published var exportDocument: MemoryFile?
     /// The save panel's file type and what it is for (memory file, notes, PDF, text).
@@ -171,7 +173,10 @@ final class AppModel: ObservableObject {
     var pendingSidecar: (doc: ProgramDocument, url: URL)?
     var lastProgramKeys: [String] = []
     var memoryFileNameCandidate: String?
-    func exportNameOverrideForDocs(_ name: String) { exportNameOverride = name }
+    /// Last file name chosen per kind of export (0.6.5).
+    var exportNames = ExportNameMemory()
+    /// The save panel's name for the export in progress: what was chosen last time for this kind, else `name`.
+    func exportNameOverrideForDocs(_ name: String) { exportNameOverride = exportNames.name(for: exportKind.rawValue, default: name) }
     @Published var showAbout = false
     #if os(macOS)
     /// What the USB link is doing ("Reading the calculator…"), nil when idle.
@@ -183,14 +188,29 @@ final class AppModel: ObservableObject {
     /// File name offered by the save panel (the calculator's backup has its own).
     private var exportNameOverride: String?
     /// Registers and program panel (inspector). The engine only reads them while it is shown.
+    /// Set by WindowFitter (Mac): moves the window into the calculator's shape for the flyout's new state, called just BEFORE
+    /// `showInspector` changes so that the window and the flyout change in the same step (0.6.9, no bounce).
+    var windowFitHook: ((Bool) -> Void)?
+
     @Published var showInspector = UserDefaults.standard.bool(forKey: "showInspector") {
-        didSet { UserDefaults.standard.set(showInspector, forKey: "showInspector"); engine?.send(.setInspector(showInspector)) }
+        willSet { if newValue != showInspector { windowFitHook?(newValue && hasInspector) } }
+        didSet { UserDefaults.standard.set(showInspector, forKey: "showInspector"); engine?.send(.setInspector(showInspector && hasInspector)) }
     }
     @Published var inspection: InspectorSnapshot?
 
-    @Published var turbo = false {
-        didSet { engine?.send(.setTurbo(turbo)) }
+    /// View ▸ Click f/g Labels (0.7.1, on by default as in the Qt app): a click on a gold / blue legend presses f / g and the key.
+    /// Off: the whole key area (legends included) is the key itself.
+    @Published var legendClicks: Bool = UserDefaults.standard.object(forKey: AppModel.legendClicksKey) as? Bool ?? true {
+        didSet { UserDefaults.standard.set(legendClicks, forKey: AppModel.legendClicksKey) }
     }
+    static let legendClicksKey = AppModelKeys.legendClicks
+    /// View ▸ Key Click Sound (0.7.1, off by default): the same synthesised deep click as the Qt app.
+    @Published var keyClickSound: Bool = UserDefaults.standard.bool(forKey: AppModel.keyClickKey) {
+        didSet { UserDefaults.standard.set(keyClickSound, forKey: AppModel.keyClickKey) }
+    }
+    static let keyClickKey = AppModelKeys.keyClickSound
+    /// The HP-15C Matrix Editor window is open (Mac).
+    @Published var showMatrixEditor = false
     @Published var skin: SkinChoice = SkinChoice(rawValue: UserDefaults.standard.string(forKey: "skin") ?? "") ?? .automatic {
         didSet { UserDefaults.standard.set(skin.rawValue, forKey: "skin") }
     }
@@ -213,8 +233,64 @@ final class AppModel: ObservableObject {
     init() {
         keyRouter.model = { [unowned self] in self.model }
         keyRouter.press = { [unowned self] in self.press($0) }
-        keyRouter.pressShifted = { [unowned self] in self.press($1, part: $0 == CalculatorMachine.keyF ? .fLabel : .gLabel) }
+        keyRouter.pressShifted = { [unowned self] in self.press($1, part: $0 == CalculatorMachine.keyF ? .fLabel : .gLabel, fromKeyboard: true) }
         keyRouter.release = { [unowned self] in self.release($0) }
+        configureMatrixEditor()
+    }
+
+    // MARK: HP-15C Matrix Editor (0.7.1)
+
+    let matrixEditor = MatrixEditorModel()
+
+    /// The editor works on a running HP-15C (15.0 or 15.2) with memory access.
+    var isMatrixEditorAvailable: Bool {
+        isRunning && hasMemoryFiles && hasInspector && snapshot.model == 15 && !isSwitchingModel
+    }
+
+    private func configureMatrixEditor() {
+        var h = MatrixEditorModel.Hooks()
+        h.fetch = { [weak self] in
+            guard let self, let e = self.engine, self.isRunning else { return nil }
+            let got = e.performAndWait { m -> (image: Data, variant: Int)? in
+                guard m.model == 15, let d = try? m.rawMemory() else { return nil }
+                return (d, m.variant)
+            }
+            guard let r = got ?? nil, r.image.count == VoyagerCalculator.memorySize, r.variant == 150 || r.variant == 152 else { return nil }
+            return r
+        }
+        h.apply = { [weak self] m, r, c, raw, done in
+            guard let self, let e = self.engine else { return done("The calculator is not running.") }
+            e.send(.perform { mc in
+                var err: String?
+                do { try mc.writeMatrix15(m, rows: r, cols: c, raw: raw) }
+                catch { err = (error as? LocalizedError)?.errorDescription ?? "\(error)" }
+                DispatchQueue.main.async { [weak self] in MainActor.assumeIsolated {
+                    if err == nil, let self, self.persistState { self.saveStateNow(turnBackOn: true) }   // kept across a restart, like a loaded file
+                    done(err)
+                } }
+            })
+        }
+        #if os(macOS)
+        h.clipboardText = { NSPasteboard.general.string(forType: .string) ?? "" }
+        h.copyText = { t in NSPasteboard.general.clearContents(); NSPasteboard.general.setString(t, forType: .string) }
+        #else
+        h.clipboardText = { UIPasteboard.general.string ?? "" }
+        h.copyText = { UIPasteboard.general.string = $0 }
+        #endif
+        matrixEditor.hooks = h
+    }
+
+    /// Calculator ▸ Matrix Editor… (and Edit ▸ Paste Matrix…): true when the window should open (it is a 15C).
+    @discardableResult
+    func prepareMatrixEditor(paste: Bool = false) -> Bool {
+        guard isRunning, hasMemoryFiles else { return false }
+        guard snapshot.model == 15 else {
+            errorMessage = "The Matrix Editor is for the HP-15C. Switch the model to the 15C first."
+            return false
+        }
+        matrixEditor.setAvailable(true)            // reloads the selected matrix from the emulator's memory
+        if paste { matrixEditor.wantsPaste = true }
+        return true
     }
 
     /// The face shown: follows the running ROM unless the user picked one.
@@ -232,8 +308,22 @@ final class AppModel: ObservableObject {
         case .hp15c: return "15C firmware"
         case .hp16c: return "16C firmware"
         case .hp12c: return "12C firmware"
+        case .stock: return "HP's original 12C firmware (keys and display only)"
         case .none: return "no firmware"
         }
+    }
+
+    /// HP's original 12C firmware is running (0.6.6): the calculator works, the CE-only features do not.
+    var isStock: Bool { family == .stock }
+    var hasInspector: Bool { capabilities.contains(.inspect) }
+    var hasMemoryFiles: Bool { capabilities.contains(.memory) }
+    /// The Registers & Program panel is shown: asked for, and the firmware has something to show.
+    var inspectorVisible: Bool { showInspector && hasInspector }
+
+    /// Why a CE-only feature is greyed out, in plain words (menus, the inspector panel, About).
+    static let stockLimits = "HP's original 12C firmware runs the keyboard and display only. These need the CE firmware's memory layout and are not available with it: Registers & Program, Open / Save Memory File, Program Info and documentation, the USB transfer of the calculator's memory to and from the emulator, the model switch, and keeping the calculator's memory between launches (it starts clear each time)."
+    func stockUnavailable(_ what: String) {
+        errorMessage = "\(what) is not available with HP's original 12C firmware. " + Self.stockLimits
     }
 
     var exportFilename: String { exportNameOverride ?? "Calculator memory" }
@@ -243,7 +333,6 @@ final class AppModel: ObservableObject {
 
     func launch() {
         guard engine == nil, !isStarting else { return }
-        reloadDocFonts()
         if let fw = firmwareStore.load() { start(fw, restoring: stateStore.load(firmwareID: SHA256Hex.of(fw.data))) }
     }
 
@@ -269,7 +358,6 @@ final class AppModel: ObservableObject {
     private func start(_ fw: StoredFirmware, restoring saved: SavedState?) {
         stopEngine()
         isStarting = true
-        let turboNow = turbo
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
             let machine = CalculatorMachine()
             let outcome: Result<String?, Error> = Result {
@@ -284,28 +372,44 @@ final class AppModel: ObservableObject {
                     self.errorMessage = (e as? LocalizedError)?.errorDescription ?? e.localizedDescription
                 case .success(let note):
                     self.notice = note
-                    self.attach(machine, firmwareName: fw.name, turbo: turboNow)
+                    self.attach(machine, firmwareName: fw.name)
+                    if machine.family == .stock { self.noticeStockOnce(machine.firmwareID) }
                 }
             } }
         }
     }
 
+    /// The first time a given HP original firmware runs: say plainly what does not work with it (0.6.6).
+    private func noticeStockOnce(_ id: String) {
+        let key = "stockNoticeSeen-" + id
+        guard persistState, !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        let extra = notice.map { $0 + "\n\n" } ?? ""
+        notice = extra + "This is HP's original 12C firmware. The calculator runs, with the keyboard and the display.\n\n" + Self.stockLimits
+    }
+
     /// Run a booted machine: engine thread, snapshots, inspector. (Also used by the tests.)
-    func attach(_ machine: CalculatorMachine, firmwareName: String, turbo turboNow: Bool = false) {
+    func attach(_ machine: CalculatorMachine, firmwareName: String) {
         stopEngine()
         self.firmwareName = firmwareName
         firmwareInfo = machine.calc.firmwareInfo
+        firmwareChecksum = machine.calc.firmwareChecksum
         family = machine.family
+        capabilities = machine.capabilities
         images = machine.images
+        let previousFirmwareID = firmwareID
         firmwareID = machine.firmwareID
         firmwareData = machine.firmwareData
-        loadStoredProgramDoc()
+        if !previousFirmwareID.isEmpty, previousFirmwareID != firmwareID {
+            clearAllNotes(forgetStored: true)          // another firmware (0.6.9): its notes belong to a program that is gone
+        } else {
+            loadStoredProgramDoc()
+        }
         let e = CalculatorEngine(machine: machine)
         e.onSnapshot = { [weak self] s in self?.snapshot = s }
         e.onFault = { [weak self] msg in self?.errorMessage = msg }
         e.onInspector = { [weak self] s in self?.inspection = s; self?.programChanged(s) }
-        e.send(.setInspector(showInspector))
-        e.send(.setTurbo(turboNow))
+        e.send(.setInspector(showInspector && machine.capabilities.contains(.inspect)))
         engine = e
         e.start()
         isRunning = true
@@ -322,7 +426,7 @@ final class AppModel: ObservableObject {
 
     /// Turn the calculator off and keep its memory for the next launch (blocking, short).
     func saveStateNow(turnBackOn: Bool = false) {
-        guard let e = engine else { return }
+        guard let e = engine, hasMemoryFiles else { return }      // HP's original firmware: no memory image to keep
         if let r = e.performAndWait(timeout: 3, { m in try? m.savedState(turnBackOn: turnBackOn) }), let s = r {
             if persistState { stateStore.save(s) }
         }
@@ -336,8 +440,12 @@ final class AppModel: ObservableObject {
 
     func press(_ code: Int) {
         guard engine != nil else { return }
+        clickSound()
         apply(latch.press(code))
     }
+
+    /// Key Click Sound (0.7.1): one click per key press, never blocking.
+    private func clickSound() { if keyClickSound { KeyClick.play() } }
 
     func release(_ code: Int) {
         apply(latch.release(code))
@@ -346,9 +454,12 @@ final class AppModel: ObservableObject {
     /// A press on one part of a key: its gold legend = f then the key, its blue legend = g then
     /// the key, the cap = the key. Latched keys (a latched f or g too) are let go first; a
     /// pending shift is replaced, never doubled (CalculatorMachine.pressShifted).
-    func press(_ code: Int, part: KeyPart) {
+    /// With Click f/g Labels off (View menu), a click on a legend is a click on the key; keyboard shortcuts for shifted
+    /// functions (`fromKeyboard`) always press the shift.
+    func press(_ code: Int, part: KeyPart, fromKeyboard: Bool = false) {
         guard engine != nil else { return }
-        guard let k = model.key(code: code), let shift = k.shift(for: part) else { return press(code) }
+        guard legendClicks || fromKeyboard, let k = model.key(code: code), let shift = k.shift(for: part) else { return press(code) }
+        clickSound()
         apply(latch.unlatchAll())
         pressedKeys.insert(shown(code))
         engine?.send(.pressShifted(shift: shift, code: code))
@@ -382,9 +493,32 @@ final class AppModel: ObservableObject {
         latchedKeys = Set(latch.latched.map(shown))
     }
 
+    /// How many times the menu / click path pressed ON (tests: Esc must never press it twice).
+    private(set) var powerToggleCount = 0
+
     func togglePower() {
+        powerToggleCount += 1
         press(CalculatorMachine.keyON); release(CalculatorMachine.keyON)
     }
+
+    /// The Calculator menu's "ON / OFF" item (it shows Esc as its shortcut). Esc itself is handled in ONE place, the key router
+    /// (HardwareKeyboard's local monitor, which sees the key first, keeps ON held while the key is down so chords like ON + - work);
+    /// when the same key reaches the menu (a sheet or text field was in front, so the monitor let it pass) the menu must not press ON a
+    /// second time. Only a click on the menu item acts.
+    func powerMenuAction(fromKeyboard: Bool) {
+        guard !fromKeyboard else { return }
+        togglePower()
+    }
+
+    #if os(macOS)
+    /// True when the menu item's action was started by a key event (its shortcut) rather than a click.
+    static var menuActionIsFromKeyboard: Bool {
+        guard let t = NSApp.currentEvent?.type else { return false }
+        return t == .keyDown || t == .keyUp
+    }
+    #else
+    static var menuActionIsFromKeyboard: Bool { false }
+    #endif
 
     /// g-ENTER-ON: the calculator's service menu (checksum, speed, model switch).
     func serviceMenu() { perform(.serviceMenu) }
@@ -405,6 +539,7 @@ final class AppModel: ObservableObject {
 
     /// Model menu: ask first, because switching clears the memory.
     func chooseModel(_ v: Int) {
+        if isStock { return stockUnavailable("Switching the model") }
         guard canSwitchModel, images.contains(v) else { return }
         pendingAction = .switchModel(v)
     }
@@ -421,6 +556,7 @@ final class AppModel: ObservableObject {
         switch a {
         case .memoryReset:
             releaseLatchedKeys()
+            clearAllNotes(forgetStored: true)          // 0.6.9: a reset clears the notes too (comments, orphans, title, author, description)
             engine?.send(.chord(.memoryReset))
         case .switchModel(let v):
             switchModel(to: v)
@@ -446,6 +582,7 @@ final class AppModel: ObservableObject {
             self.isSwitchingModel = false
             switch r {
             case .success:
+                self.clearAllNotes(forgetStored: true)        // 0.6.9: the model switch cleared the memory, so the notes go too
                 if self.persistState { self.saveStateNow(turnBackOn: true) }   // remembered for this firmware
                 next?()
             case .failure(let err):
@@ -456,9 +593,13 @@ final class AppModel: ObservableObject {
 
     // MARK: memory files
 
-    func openMemory() { importTask = .memory; showImporter = true }
+    func openMemory() {
+        guard hasMemoryFiles else { return stockUnavailable("Opening a memory file") }
+        importTask = .memory; showImporter = true
+    }
 
     func memoryPicked(_ result: Result<URL, Error>) {
+        guard hasMemoryFiles else { return stockUnavailable("Opening a memory file") }     // also a .16c opened from Finder
         switch result {
         case .failure(let e): errorMessage = e.localizedDescription
         case .success(let url):
@@ -466,14 +607,11 @@ final class AppModel: ObservableObject {
             defer { if ok { url.stopAccessingSecurityScopedResource() } }
             do {
                 let data = try Data(contentsOf: url)
-                guard data.count == VoyagerCalculator.memorySize else {
-                    errorMessage = "“\(url.lastPathComponent)” is not a calculator memory file (it must be exactly 2048 bytes)."
-                    return
-                }
-                let ext = url.pathExtension.lowercased()
+                // by content, never by the ending (0.6.9): any 2048-byte file opens; a text program gets its own message
+                if let problem = MemoryFileNames.problem(with: data, name: url.lastPathComponent) { errorMessage = problem; return }
                 findSidecar(for: url)
-                let note = ["12c", "15c", "16c"].contains(ext) && ext != model.fileExtension
-                    ? "“\(url.lastPathComponent)” was saved from a \(ext.uppercased()); the calculator now runs as a \(model.name)." : nil
+                let hint = MemoryFileNames.modelHint(forExtension: url.pathExtension)
+                let note = hint.flatMap { $0 != model.id ? "“\(url.lastPathComponent)” was saved from a \($0)C; the calculator now runs as a \(model.name)." : nil }
                 offerMemory(data, source: "“\(url.lastPathComponent)”", note: note)
             } catch {
                 errorMessage = error.localizedDescription
@@ -487,23 +625,32 @@ final class AppModel: ObservableObject {
     func offerMemory(_ data: Data, source: String, note: String? = nil) {
         let fw = firmwareData, v = runningVariant, imgs = images, name = "HP-" + model.name
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            // 16C memory layouts (standard 203 B / extended B7B7 = E8E8 / early E3E3): a trial load cannot see a
+            // mismatch (the firmware accepts the image, the registers just read wrong), so check the structure first.
+            var data = data, source = source
+            var layout = CalculatorMachine.layoutCheck(data, firmware: fw, variant: v)
+            if layout?.verdict == .convert, let converted = VoyagerCalculator.convertE3E3Memory(data) {
+                data = converted; source += " (converted from the early E3E3 layout)"; layout = nil
+            }
             let verdict = CalculatorMachine.checkMemory(data, firmware: fw, variant: v)
             let fitsOther = verdict.fits ? [] : CalculatorMachine.identifyMemory(data, firmware: fw, among: imgs.filter { $0 != v })
+            let img = data, src = source, layoutWarning = layout?.verdict == .warn ? layout?.message : nil
             DispatchQueue.main.async { [weak self] in MainActor.assumeIsolated {
                 guard let self else { return }
                 switch verdict {
                 case .fits:
                     _ = note        // the check passed, so a file-name hint is moot (and two alerts would clash)
-                    self.pendingAction = .loadMemory(data, source: source)
+                    if let w = layoutWarning { self.pendingAction = .loadMemoryAnyway(img, source: src, reason: w) }
+                    else { self.pendingAction = .loadMemory(img, source: src) }
                 case .needsMoreMemory:
                     let m = "It uses more registers than the \(name) mode this firmware is running has (g MEM gives Error 10, and DIM (i) cannot fix it). It is a memory from the HP-15C (15.2) double-memory mode."
                     if let o = fitsOther.first {
-                        self.pendingAction = .switchThenLoad(data, source: source, variant: o, reason: m + " Switch the model first (this clears the emulator's memory), then load it.")
+                        self.pendingAction = .switchThenLoad(img, source: src, variant: o, reason: m + " Switch the model first (this clears the emulator's memory), then load it.")
                     } else {
-                        self.pendingAction = .loadMemoryAnyway(data, source: source, reason: m)
+                        self.pendingAction = .loadMemoryAnyway(img, source: src, reason: m)
                     }
                 case .wrongSize(let n):
-                    self.errorMessage = "The memory from \(source) is \(n) bytes; a calculator memory is 2048 bytes. Nothing was loaded."
+                    self.errorMessage = "The memory from \(src) is \(n) bytes; a calculator memory is 2048 bytes. Nothing was loaded."
                 case .rejected, .unreadable, .changed:
                     var m = "In a trial load on this firmware's \(name)"
                     switch verdict {
@@ -513,27 +660,77 @@ final class AppModel: ObservableObject {
                     }
                     if let o = fitsOther.first { m += " It fits the HP-\(CalculatorMachine.variantName(o)): choose that in the Model menu, then try again." }
                     else { m += " It may be from another model or firmware." }
-                    self.pendingAction = .loadMemoryAnyway(data, source: source, reason: m)
+                    self.pendingAction = .loadMemoryAnyway(img, source: src, reason: m)
                 }
             } }
         }
     }
 
     func saveMemory() {
-        exportNameOverride = memoryFileName.map { ($0 as NSString).deletingPathExtension }
+        guard hasMemoryFiles else { return stockUnavailable("Saving a memory file") }
         exportKind = .memory; exportType = .memoryType(for: model)
+        exportNameOverride = memoryFileName.map { exportNames.name(for: ExportKind.memory.rawValue, default: ($0 as NSString).deletingPathExtension) }
+            ?? exportNames.name(for: ExportKind.memory.rawValue, default: "Calculator memory")
         engine?.send(.saveState { [weak self] r in
             switch r {
-            case .success(let s): self?.exportDocument = MemoryFile(data: s.memory)
+            case .success(let s): self?.offerMemorySave(s.memory)
             case .failure(let e): self?.errorMessage = (e as? LocalizedError)?.errorDescription ?? "\(e)"
             }
         })
     }
 
+    /// The name the save panel offers for a memory file: the chosen / last base name plus the ending last typed, else the model's
+    /// default (.bin15c). Only a suggestion (0.6.9).
+    var memorySuggestedFileName: String {
+        exportFilename + "." + (exportNames.ending(for: ExportKind.memory.rawValue).flatMap { $0.isEmpty ? nil : $0 }
+                                ?? MemoryFileNames.defaultExtension(forModel: model.id))
+    }
+
+    /// Hand a memory image to the user's save dialog. macOS: a plain NSSavePanel with no file type restriction, so whatever ending
+    /// the user types is kept (SwiftUI's fileExporter would force its type's ending). iOS: the Files exporter with the default type.
+    func offerMemorySave(_ data: Data) {
+        #if os(macOS)
+        presentMemorySavePanel(data)
+        #else
+        exportDocument = MemoryFile(data: data)
+        #endif
+    }
+
+    #if os(macOS)
+    private func presentMemorySavePanel(_ data: Data) {
+        let panel = NSSavePanel()
+        panel.title = "Save Memory File"
+        panel.message = "“.bin\(model.id)c” is only a suggestion: you can type any name and ending."
+        panel.nameFieldStringValue = memorySuggestedFileName
+        panel.canCreateDirectories = true
+        panel.isExtensionHidden = false
+        panel.canSelectHiddenExtension = false
+        panel.allowsOtherFileTypes = true
+        panel.allowedContentTypes = []
+        let done: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            MainActor.assumeIsolated { self?.memoryPanelFinished(response, url: panel.url, data: data) }
+        }
+        if let w = NSApp.keyWindow ?? NSApp.mainWindow { panel.beginSheetModal(for: w, completionHandler: done) }
+        else { panel.begin(completionHandler: done) }
+    }
+
+    func memoryPanelFinished(_ response: NSApplication.ModalResponse, url: URL?, data: Data) {
+        guard response == .OK, let url else { exporterClosed(); return }
+        do {
+            try data.write(to: url, options: .atomic)
+            exportFinished(.success(url))
+        } catch {
+            exportFinished(.failure(error))
+        }
+        exporterClosed()
+    }
+    #endif
+
     func exportFinished(_ result: Result<URL, Error>) {
         exportDocument = nil
         exportNameOverride = nil
         let kind = exportKind; exportKind = .memory
+        if case .success(let url) = result { exportNames.remember(kind.rawValue, url: url) }
         if kind != .memory {
             if case .failure(let e) = result { errorMessage = e.localizedDescription }
             if kind == .notes, case .success(let url) = result { programDocURL = url }
@@ -595,6 +792,7 @@ final class AppModel: ObservableObject {
     /// Calculator ▸ Read from Calculator: the 2 KB memory over USB, checked, then loaded after
     /// the same confirmation as opening a memory file.
     func readFromCalculator() {
+        guard hasMemoryFiles else { return stockUnavailable("Reading the real calculator's memory into the emulator") }
         guard isRunning, !linkBusy else { return }
         usb("Reading the calculator's memory…", { try $0.readMemory() }) { [weak self] r in
             switch r {
@@ -612,7 +810,7 @@ final class AppModel: ObservableObject {
             case .success(let d):
                 self?.exportNameOverride = "Calculator memory " + Self.stamp()
                 if let self { self.exportKind = .memory; self.exportType = .memoryType(for: self.model) }
-                self?.exportDocument = MemoryFile(data: d)
+                self?.offerMemorySave(d)
             case .failure(let e): self?.linkFailed(e)
             }
         }
@@ -620,6 +818,7 @@ final class AppModel: ObservableObject {
 
     /// Calculator ▸ Write to Calculator…: read and back up the calculator's memory, then ask.
     func writeToCalculator() {
+        guard hasMemoryFiles else { return stockUnavailable("Writing the emulator's memory to the real calculator") }
         guard isRunning, !linkBusy, let e = engine else { return }
         let fw = firmwareData, imgs = images.isEmpty ? [runningVariant] : images
         let emu = "HP-" + model.name
@@ -672,7 +871,7 @@ final class AppModel: ObservableObject {
     /// (not the sandbox container); allowed by the home-relative-path entitlement. If that
     /// fails, the app's own Documents folder.
     nonisolated static func saveBackup(_ data: Data, variant: Int?) throws -> URL {
-        let ext = variant.map { $0 == 120 ? "12c" : $0 == 160 ? "16c" : "15c" } ?? "bin"
+        let ext = variant.map { MemoryFileNames.defaultExtension(forModel: $0 == 120 ? 12 : $0 == 160 ? 16 : 15) } ?? "bin"
         let name = (variant.map { "HP-" + (CalculatorMachine.variantName($0).components(separatedBy: " (").first ?? "") } ?? "Unknown") + " calculator "
         let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = "yyyy-MM-dd HH.mm.ss"
         let file = name + f.string(from: Date()) + "." + ext
@@ -696,6 +895,7 @@ final class AppModel: ObservableObject {
     /// Clear the calculator: forget the saved memory and cold-start.
     func resetCalculator() {
         stopEngine()
+        clearAllNotes(forgetStored: true)              // 0.6.9: everything of the old program, notes included
         stateStore.clear(firmwareID: firmwareID)
         if let fw = firmwareStore.load() { start(fw, restoring: nil) }
     }

@@ -269,7 +269,7 @@ int main(void) {
         whole = 1; test15_boot(c); whole = 0;
         vc_destroy(c);
     }
-    printf("== HP-12C CE multi (E3E3): 16C, 15C and 12C modes\n");
+    printf("== HP-12C CE multi (%s): 16C, 15C and 12C modes\n", strrchr(MULTI, '/') ? strrchr(MULTI, '/') + 1 : MULTI);
     if ((c = open_fw(MULTI, VC_ENGINE_WHOLE))) {
         extern int multi_tests(vc_calc *c);
         whole = 1; multi_tests(c); whole = 0;

@@ -36,6 +36,8 @@
 #define A16_CLKSW    0x9BB8u   /* clock switch (skipped by the runner) */
 #define A16_PAINT    0xBDA2u   /* paints a text frame */
 #define A12M_PAINT   0x18D92u  /* paint routine address in our HP-12C CE multi builds */
+#define IMAGE_SIZE   0x1C000u  /* the application image 0x4000..0x1FFFF */
+#define FLASH_DUMP   0x20000u  /* a full dump of the 128 KB flash: bootloader 0..0x3FFF + the image */
 #define RUN_SENT     0x1000u   /* return address marking "routine finished" */
 #define RUN_STACK    0x200013E0u
 #define DUMP_ADDR    0x20000018u
@@ -155,8 +157,11 @@ struct vc_calc {
     uint8_t *img; size_t img_len;
     int model, family, variant, ext16, runner_ok;
     uint32_t paint;
+    int checksum;            /* CE checksum shown by the calculator (XYXY -> XY), -1 if the image is too short */
+    uint32_t stripped;       /* bytes dropped from the front of the file (a full flash dump) */
+    int loose_paint;         /* paint routine found by its code shape, not by the exact fingerprint */
     char info[160];
-    char err[200];
+    char err[640];
     int engine;              /* -1 = not started */
     uint8_t *flash, *sram;
     uint8_t *periph, *scs, *high, *userpage;  /* runner: plain memory; whole: high/userpage */
@@ -174,15 +179,18 @@ struct vc_calc {
     uint32_t busy;           /* inspection only: ticks in a row without sleep */
     uint32_t tick_insn;
     int ast_en, adc_en, adc_conv, adc_isr;
+    uint32_t adc_ie;         /* ADCIFE interrupt enable (IER sets, IDR clears) */
+    uint32_t nvic_en2;       /* NVIC ISER2 / ICER2 (IRQ 64..95): bit 5 = IRQ 69 = ADCIFE */
+    uint32_t clk_addr;       /* SRAM address of the firmware's CPU-clock variable (Hz), build specific */
     uint32_t adc_value, adc_vec, tick_vec;
     double battery;
+    double ipc;                  /* ARM instructions per CPU clock used for the 10 ms slice (default 0.75) */
     uint32_t consec_a; int consec_n, consec_flip, consec_valid;
     char frames[MAX_FRAMES][21]; uint32_t nframes;
 };
 
 static void seterr(vc_calc *c, const char *msg) { snprintf(c->err, sizeof c->err, "%s", msg); }
 static uint32_t rd32(vc_calc *c, uint32_t a) { uint32_t v = 0; cpu_read(&c->cpu, a, 4, &v); return v; }
-static uint8_t rd8(vc_calc *c, uint32_t a) { uint32_t v = 0; cpu_read(&c->cpu, a, 1, &v); return (uint8_t)v; }
 
 /* ---------------- runner bus: plain memory everywhere */
 static int plain_rw(vc_calc *c, uint32_t a, int size, uint32_t *rv, int wr, uint32_t wv) {
@@ -234,6 +242,7 @@ static int whole_read(void *ctx, uint32_t a, int size, uint32_t *rv) {
         } else if (a == ADC_BASE + 8) {
             v = c->adc_isr ? 1 : ((c->adc_en ? 0x01000000u : 0) | (c->adc_conv ? 1u : 0));
         } else if (a == ADC_BASE + 0x2C) v = c->adc_value;
+        else if (a == ADC_BASE + 0x38) v = c->adc_ie;       /* IMR */
         else if (a == 0x400A0008u) v |= 1;
         else v = ready_loop(c, a, v);
         *rv = v & szmask(size); return 0;
@@ -260,12 +269,16 @@ static int whole_write(void *ctx, uint32_t a, int size, uint32_t v) {
             if (v & 0x200) c->adc_en = 0;
             if ((v & 0x8) && c->adc_en) c->adc_conv = 1;
         } else if (a == ADC_BASE + 0xC && (v & 1)) c->adc_conv = 0;
+        else if (a == ADC_BASE + 0x30) c->adc_ie |= v;      /* IER */
+        else if (a == ADC_BASE + 0x34) c->adc_ie &= ~v;     /* IDR */
         (void)size; return 0;
     }
     if (a - SCS_BASE < SCS_SIZE) {
         amap_put(&c->mm, a, v);
         if (a == 0xE000E104u && (v & 0x80)) c->ast_en = 1;
         if (a == 0xE000E184u && (v & 0x80)) c->ast_en = 0;
+        if (a == 0xE000E108u) c->nvic_en2 |= v;             /* ISER2 */
+        if (a == 0xE000E188u) c->nvic_en2 &= ~v;            /* ICER2 */
         return 0;
     }
     return plain_rw(c, a, size, NULL, 1, v);
@@ -292,6 +305,7 @@ vc_calc *vc_create(void) {
     if (!c) return NULL;
     c->engine = -1;
     c->battery = 3.0;
+    c->ipc = VC_IPC_REFERENCE;
     c->flash = calloc(FLASH_SIZE, 1);
     c->sram = calloc(0x10000, 1);
     c->snap_sram = calloc(0x10000, 1);
@@ -311,18 +325,105 @@ static void hexsha(const uint8_t *p, size_t n, char out[65]) {
     for (i = 0; i < 32; i++) snprintf(out + 2 * i, 3, "%02x", h[i]);
 }
 
+/* ---------------------------------------------------------------- firmware loading */
+/* The image for flash address 0x4000 starts with an ARM vector table: initial SP in SRAM, reset
+ * vector inside the image. */
+static int vector_ok(const uint8_t *d, size_t len) {
+    if (len < 8) return 0;
+    uint32_t sp = (uint32_t)d[0] | d[1] << 8 | d[2] << 16 | (uint32_t)d[3] << 24;
+    uint32_t rst = (uint32_t)d[4] | d[5] << 8 | d[6] << 16 | (uint32_t)d[7] << 24;
+    return !(sp < SRAM_BASE || sp > SRAM_BASE + 0x10000 || (rst & ~1u) < FLASH_BASE || (rst & ~1u) >= FLASH_BASE + len);
+}
+/* The CE checksum the calculator shows as XYXY: (sum of the 0x1C000 image bytes - the byte at
+ * 0x1BFEF) mod 256. Same rule as VoyagerFlash. -1 if the image is shorter than that. */
+static int ce_checksum(const uint8_t *d, size_t len) {
+    size_t i; uint32_t sum = 0;
+    if (len < IMAGE_SIZE) return -1;
+    for (i = 0; i < IMAGE_SIZE; i++) sum += d[i];
+    return (int)((sum - d[0x1BFEF]) & 0xFF);
+}
+/* The LCD paint routine by its code shape: registers, branch targets and literal-pool offsets
+ * may differ between builds (HP's own 12C image differs from the 15C CE one in two halfwords),
+ * so each halfword is compared under a mask. Exactly one hit, else 0. */
+static uint32_t find_paint_loose(const uint8_t *img, size_t len) {
+    static const uint16_t V[15] = {0xB538, 0x4604, 0x2500, 0x5C00, 0x4628, 0xF000, 0xF800, 0x1C6D, 0x2D14, 0xDBF8, 0xBD31, 0x4800, 0x7800, 0x28FF, 0xD009};
+    static const uint16_t M[15] = {0xFFFF, 0xFFFF, 0xFFFF, 0xFE00, 0xFFFF, 0xF800, 0xF800, 0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0xF800, 0xFFFF, 0xFFFF, 0xFFFF};
+    size_t o; int hits = 0; uint32_t at = 0;
+    for (o = 0; o + 30 <= len; o += 2) {
+        int k;
+        for (k = 0; k < 15; k++) {
+            uint16_t h = (uint16_t)(img[o + 2 * k] | img[o + 2 * k + 1] << 8);
+            if ((h & M[k]) != V[k]) break;
+        }
+        if (k == 15) { hits++; at = FLASH_BASE + (uint32_t)o; }
+    }
+    return hits == 1 ? at : 0;
+}
+/* Does the code load the address 0x20000010 from a literal? CE builds that run several calculators
+ * (and the 15C CE) publish the running ROM's address there; HP's original 12C image never does,
+ * so the emulator could not tell which calculator it is driving. */
+static int has_rom_pointer(const uint8_t *img, size_t len) {
+    size_t o;
+    for (o = 0; o + 4 <= len; o += 2)
+        if (img[o] == 0x10 && img[o + 1] == 0 && img[o + 2] == 0 && img[o + 3] == 0x20) return 1;
+    return 0;
+}
+/* Calculator images (Nut ROMs) found by their header; bit 0 = 12C, 1 = 15C, 2 = 16C. */
+static int rom_mask(const uint8_t *img, size_t len) {
+    size_t o; int m = 0;
+    for (o = 0; o + 14 <= len; o += 2) {
+        const uint8_t *p = img + o;
+        if (p[2] != 0x4E || p[3] != 0 || p[4] != 0x70 || p[5] != 2 || p[6] != 0x38 || p[7] != 2 || p[8] != 0xEE || p[9] != 2) continue;
+        int w5 = p[10] | p[11] << 8;
+        if (w5 == 0x14F) m |= 1; else if (w5 == 0x10F) m |= 2; else if (w5 == 0x0FF) m |= 4;
+    }
+    return m;
+}
+static void rom_names(int m, char *out, size_t n) {
+    out[0] = 0;
+    if (m & 1) snprintf(out + strlen(out), n - strlen(out), "%s12C", out[0] ? ", " : "");
+    if (m & 2) snprintf(out + strlen(out), n - strlen(out), "%s15C", out[0] ? ", " : "");
+    if (m & 4) snprintf(out + strlen(out), n - strlen(out), "%s16C", out[0] ? ", " : "");
+    if (!out[0]) snprintf(out, n, "no Nut ROM found");
+}
+/* HP's original firmware layout runs when it holds the 12C ROM only (the one verified: the 2015 HP-12C). */
+static int stock_runnable(const vc_calc *c) { return c->family == VC_FAMILY_STOCK && c->img && rom_mask(c->img, c->img_len) == 1; }
+static void ck_text(int ck, char out[12]) { if (ck < 0) snprintf(out, 12, "unknown"); else snprintf(out, 12, "%02X%02X", ck & 255, ck & 255); }
+
 int vc_load_firmware(vc_calc *c, const uint8_t *data, size_t len) {
     size_t i; char hs[65];
     if (!c || !data) return VC_ERR_ARG;
-    if (len < 0x1C000 || len > FLASH_SIZE - FLASH_BASE) { seterr(c, "file size is not that of an HP-15C CE / HP-16C CE firmware (about 112 KB)"); return VC_ERR_FIRMWARE; }
-    uint32_t sp = (uint32_t)data[0] | data[1] << 8 | data[2] << 16 | (uint32_t)data[3] << 24;
-    uint32_t rst = (uint32_t)data[4] | data[5] << 8 | data[6] << 16 | (uint32_t)data[7] << 24;
-    if (sp < SRAM_BASE || sp > SRAM_BASE + 0x10000 || (rst & ~1u) < FLASH_BASE || (rst & ~1u) >= FLASH_BASE + len) {
-        seterr(c, "the file does not start with an ARM vector table for address 0x4000"); return VC_ERR_FIRMWARE;
+    c->stripped = 0; c->checksum = -1; c->loose_paint = 0;
+    /* 1. A full flash dump (bootloader 0..0x3FFF + the image at 0x4000): use the part from 0x4000. A file
+     *    that is itself a valid image (also one padded with 0xFF after it) is used as it is. */
+    if (len >= FLASH_DUMP && len <= FLASH_SIZE && !vector_ok(data, len) && vector_ok(data + FLASH_BASE, len - FLASH_BASE)) {
+        data += FLASH_BASE; len -= FLASH_BASE; c->stripped = FLASH_BASE;
+    }
+    if (len == 0) { seterr(c, "The file is empty."); return VC_ERR_FIRMWARE; }
+    if (len < IMAGE_SIZE) {
+        snprintf(c->err, sizeof c->err, "This file is %zu bytes. VoyagerCalc needs the firmware image for flash address 0x4000: 114,688 bytes (112 KB), "
+                 "or a full dump of the calculator's 128 KB flash (131,072 bytes, read from address 0). Is the file cut short?", len);
+        return VC_ERR_FIRMWARE;
+    }
+    if (len > FLASH_SIZE - FLASH_BASE) {
+        snprintf(c->err, sizeof c->err, "This file is %zu bytes, larger than any firmware or flash dump this chip can hold. VoyagerCalc needs "
+                 "the firmware image for flash address 0x4000: 114,688 bytes (112 KB), or a full dump of the 128 KB flash.", len);
+        return VC_ERR_FIRMWARE;
+    }
+    if (!vector_ok(data, len)) {
+        if (len >= FLASH_DUMP)
+            snprintf(c->err, sizeof c->err, "This file is %zu bytes, the size of a full flash dump, but there is no firmware at address 0x4000 "
+                     "(no ARM vector table there). Expected: the bootloader in the first 16 KB and the calculator's firmware after it.", len);
+        else
+            snprintf(c->err, sizeof c->err, "This file is %zu bytes but does not start with an ARM vector table for flash address 0x4000, so it is not "
+                     "a firmware image. Expected: the 114,688-byte firmware image, or a full 128 KB flash dump. A dump read from the wrong "
+                     "offset, a text or zip file, or another chip's firmware looks like this.", len);
+        return VC_ERR_FIRMWARE;
     }
     free(c->img);
     c->img = malloc(len); if (!c->img) return VC_ERR_ARG;
     memcpy(c->img, data, len); c->img_len = len;
+    c->checksum = ce_checksum(c->img, len);
     c->runner_ok = 1;
     for (i = 0; i < sizeof FP16 / sizeof FP16[0]; i++) {
         uint32_t off = FP16[i].addr - FLASH_BASE;
@@ -336,19 +437,56 @@ int vc_load_firmware(vc_calc *c, const uint8_t *data, size_t len) {
     }
     c->paint = hits == 1 ? at : 0;
     c->model = VC_MODEL_NONE; c->family = VC_MODEL_NONE;
-    if (c->runner_ok && c->paint == A16_PAINT) c->family = VC_MODEL_16C;
-    else if (c->paint == A12M_PAINT) c->family = VC_FAMILY_MULTI;          /* our HP-12C CE multi builds */
-    else if (c->paint && !c->runner_ok && c->paint > 0x14000) c->family = VC_MODEL_15C;
-    c->model = c->family == VC_FAMILY_MULTI ? VC_MODEL_12C : c->family;
+    int loose = 0;
+    if (c->paint) {
+        if (c->runner_ok && c->paint == A16_PAINT) c->family = VC_MODEL_16C;
+        else if (c->paint == A12M_PAINT) c->family = VC_FAMILY_MULTI;          /* our HP-12C CE multi builds */
+        else if (!c->runner_ok && c->paint > 0x14000) c->family = VC_MODEL_15C;
+    } else if ((c->paint = find_paint_loose(c->img, len)) != 0) {
+        /* Not one of the known builds, but the same display routine: recognised by its shape. */
+        loose = c->loose_paint = 1;
+        if (c->runner_ok) c->family = VC_MODEL_16C;
+        else if (has_rom_pointer(c->img, len)) c->family = VC_MODEL_15C;      /* the CE engine follows the model by the ROM pointer */
+        else c->family = VC_FAMILY_STOCK;
+    }
+    c->model = c->family == VC_FAMILY_MULTI ? VC_MODEL_12C : c->family == VC_FAMILY_STOCK ? VC_MODEL_12C : c->family;
     c->ext16 = c->family == VC_MODEL_16C && (c->img[0xE000] | c->img[0xE001] | c->img[0xE002] | c->img[0xE003]);
-    snprintf(c->info, sizeof c->info, "%s%s",
-             c->family == VC_MODEL_16C ? "HP-16C CE firmware" : c->family == VC_MODEL_15C ? "HP-15C CE firmware" :
-             c->family == VC_FAMILY_MULTI ? "HP-12C CE multi firmware (12C / 15C / 16C)" : "unknown firmware",
-             c->ext16 ? " (extended memory)" : "");
+    char ck[12], names[40]; ck_text(c->checksum, ck);
+    int rm = rom_mask(c->img, len); rom_names(rm, names, sizeof names);
+    if (c->family == VC_FAMILY_STOCK) {
+        if (stock_runnable(c))
+            snprintf(c->info, sizeof c->info, "HP's original HP-12C firmware; limited: no inspector, memory files or model switch");
+        else
+            snprintf(c->info, sizeof c->info, "HP original-layout firmware, checksum %s, contains the %s ROM (not verified, not run)", ck, names);
+    } else {
+        const char *base = c->family == VC_MODEL_16C ? "HP-16C CE firmware" : c->family == VC_MODEL_15C ? (loose && rm == 1 ? "HP-12C CE firmware" : loose && rm == 4 ? "HP-16C CE firmware" : "HP-15C CE firmware") :
+                           c->family == VC_FAMILY_MULTI ? "HP-12C CE multi firmware (12C / 15C / 16C)" : "unknown firmware";
+        int m16 = c->family == VC_FAMILY_MULTI ? vc_firmware_mem16(c) : VC_MEM16_NONE;
+        const char *e16 = c->ext16 ? " (extended memory)" :
+                          m16 == VC_MEM16_EXT ? " (16C: extended memory)" : m16 == VC_MEM16_EXT_E3E3 ? " (16C: extended memory, early E3E3 layout)" :
+                          m16 == VC_MEM16_STD ? " (16C: standard memory)" : "";
+        snprintf(c->info, sizeof c->info, "%s%s%s", base, e16, loose && c->family != VC_MODEL_NONE ? " (recognised by its structure, not a tested build)" : "");
+    }
     c->engine = -1;
-    if (c->family == VC_MODEL_NONE) { seterr(c, "firmware not recognised as an HP-12C, HP-15C or HP-16C CE firmware this core knows"); return VC_ERR_FIRMWARE; }
+    if (c->family == VC_FAMILY_STOCK && !stock_runnable(c)) {
+        snprintf(c->err, sizeof c->err, "This is HP calculator firmware in the original HP layout (checksum %s, contains the %s ROM). VoyagerCalc runs the original "
+                 "HP-12C firmware, but this one has not been verified, so it is not started. Please choose a Voyager firmware or the original HP-12C image instead. "
+                 "Nothing was changed on your calculator.", ck, names);
+        return VC_ERR_UNSUPPORTED;
+    }
+    if (c->family == VC_MODEL_NONE) {
+        if (rm)
+            snprintf(c->err, sizeof c->err, "This is a valid firmware image (checksum %s, contains the %s ROM) but VoyagerCalc does not know its display routine, "
+                     "so it cannot run it. The tested builds are the HP-15C CE, HP-16C CE and Voyager 12C multi firmware.", ck, names);
+        else
+            snprintf(c->err, sizeof c->err, "This file has a valid vector table (checksum %s) but no HP calculator ROM was found in it, so it is not an HP-12C, "
+                     "HP-15C or HP-16C CE firmware that VoyagerCalc can run.", ck);
+        return VC_ERR_FIRMWARE;
+    }
     return VC_OK;
 }
+int vc_firmware_checksum(const vc_calc *c) { return c ? c->checksum : -1; }
+uint32_t vc_firmware_stripped(const vc_calc *c) { return c ? c->stripped : 0; }
 int vc_firmware_family(const vc_calc *c) { return c ? c->family : 0; }
 uint32_t vc_debug_read32(vc_calc *c, uint32_t addr) { return c && c->engine >= 0 ? rd32(c, addr) : 0; }
 /* Which Nut ROM the firmware runs now. Multi-ROM builds (our 12C multi, and the 15C 3-ROM
@@ -363,6 +501,7 @@ static int rom_word(vc_calc *c, uint32_t rb, uint32_t i) {
 }
 static void update_active_model(vc_calc *c) {
     if (c->engine != VC_ENGINE_WHOLE) return;
+    if (c->family == VC_FAMILY_STOCK) { c->model = VC_MODEL_12C; c->variant = 120; return; }   /* one ROM, no model word to follow */
     uint32_t rb = rd32(c, 0x20000010);
     int w = rom_word(c, rb, 5);
     if (w == 0x14F) { c->model = VC_MODEL_12C; c->variant = 120; }
@@ -396,6 +535,11 @@ int vc_firmware_images(const vc_calc *c, int *variants, int max) {
 int vc_model_variant(const vc_calc *c) { if (!c) return 0; update_active_model((vc_calc *)c); return c->variant ? c->variant : c->model * 10; }
 int vc_model(const vc_calc *c) { if (!c) return 0; update_active_model((vc_calc *)c); return c->model; }
 const char *vc_firmware_info(const vc_calc *c) { return c ? c->info : ""; }
+unsigned vc_capabilities(const vc_calc *c) {
+    if (!c || c->family == VC_MODEL_NONE) return 0;
+    if (c->family == VC_FAMILY_STOCK) return VC_CAP_KEYS_DISPLAY;
+    return VC_CAP_KEYS_DISPLAY | VC_CAP_INSPECT | VC_CAP_MEMORY | VC_CAP_MODEL_SWITCH;
+}
 int vc_engine(const vc_calc *c) { return c ? c->engine : -1; }
 const char *vc_last_error(const vc_calc *c) { return c ? c->err : "no calculator"; }
 
@@ -445,13 +589,16 @@ static void setup_memory(vc_calc *c, int whole) {
 int vc_start(vc_calc *c, int engine, int cold) {
     if (!c) return VC_ERR_ARG;
     if (c->family == VC_MODEL_NONE) { seterr(c, "no supported firmware loaded"); return VC_ERR_STATE; }
+    if (c->family == VC_FAMILY_STOCK && !stock_runnable(c)) { seterr(c, "this HP firmware is recognised but only the original HP-12C has been verified to run"); return VC_ERR_STATE; }
     if (engine == VC_ENGINE_RUNNER && c->family != VC_MODEL_16C) { seterr(c, "the program runner needs an HP-16C CE firmware; use the whole-calculator engine"); return VC_ERR_STATE; }
-    c->model = c->family == VC_FAMILY_MULTI ? VC_MODEL_12C : c->family; c->variant = 0;
+    c->model = c->family == VC_FAMILY_MULTI || c->family == VC_FAMILY_STOCK ? VC_MODEL_12C : c->family; c->variant = c->family == VC_FAMILY_STOCK ? 120 : 0;
     c->steps = 0; c->prefix = 0; c->have_snap = 0; c->held[0] = 0; c->nframes = 0;
     c->ticks = c->sleeps = c->insn = 0;
     memset(c->keydown, 0, sizeof c->keydown); c->on = 0;
     memset(c->gpio, 0, sizeof c->gpio);
     c->ast_en = c->adc_en = c->adc_conv = c->adc_isr = 0; c->consec_valid = 0;
+    c->adc_ie = c->nvic_en2 = 0;
+    c->clk_addr = c->family == VC_FAMILY_STOCK ? 0x20000008u : 0x2000085Cu;   /* same variable block, different RAM base per build */
     if (engine == VC_ENGINE_RUNNER) {
         free(c->periph); free(c->scs);
         c->periph = calloc(PERIPH_SIZE, 1); c->scs = calloc(SCS_SIZE, 1);
@@ -479,7 +626,7 @@ int vc_start(vc_calc *c, int engine, int cold) {
         if (c->paint) cpu_add_hook(cpu, c->paint, hook_paint, c);
         c->limit = (uint64_t)-1 / 2;
         if (c->family == VC_MODEL_16C) cpu_add_hook(cpu, A16_FETCH, hook_fetch, c);   /* only counts Nut instructions */
-        c->tick_insn = 30000;
+        c->tick_insn = (uint32_t)(4000000.0 / 100 * c->ipc);   /* 4 MHz until the firmware sets its clock */
         c->adc_value = (uint32_t)(c->battery * 1024 + 0.5);   /* PORT: 12-bit reading, 3072 = 3.0 V */
         memcpy(&c->adc_vec, c->img + (16 + 69) * 4, 4);
         memcpy(&c->tick_vec, c->img + 0xDC, 4);
@@ -528,13 +675,15 @@ int vc_run_ms(vc_calc *c, uint32_t ms) {
         c->insn += cpu->icount - before;
         if (c->ast_en && (cpu->primask == 0 || slept)) {
             /* PORT: _on_tick */
-            if (rd8(c, 0x20000855) == 1 && c->adc_en) {
+            /* ADC end-of-conversion interrupt, by hardware state (not by a firmware RAM address): a conversion was started,
+             * SEOC is enabled in the ADCIFE interrupt mask and IRQ 69 is enabled in the NVIC. */
+            if (c->adc_en && c->adc_conv && (c->adc_ie & 1) && (c->nvic_en2 & 0x20)) {
                 c->adc_isr = 1;
                 int r = whole_isr(c, c->adc_vec); c->adc_isr = 0;
                 if (r) return r;
             }
-            uint32_t f = rd32(c, 0x2000085C);
-            if (f == 4000000 || f == 12000000 || f == 48000000) c->tick_insn = (uint32_t)((double)f / 100 * 0.75);
+            uint32_t f = rd32(c, c->clk_addr);
+            if (f == 4000000 || f == 12000000 || f == 48000000) c->tick_insn = (uint32_t)((double)f / 100 * c->ipc);
             int r = whole_isr(c, c->tick_vec);
             if (r) return r;
             c->ticks++;
@@ -542,6 +691,17 @@ int vc_run_ms(vc_calc *c, uint32_t ms) {
     }
     return VC_OK;
 }
+
+int vc_set_clock_ipc(vc_calc *c, double ipc) {
+    if (!c || !(ipc == 0 || (ipc >= 0.1 && ipc <= 2.0))) return VC_ERR_ARG;
+    c->ipc = ipc == 0 ? VC_IPC_REFERENCE : ipc;
+    if (c->engine == VC_ENGINE_WHOLE) {
+        uint32_t f = rd32(c, c->clk_addr);
+        c->tick_insn = (uint32_t)((f == 12000000 || f == 48000000 ? (double)f : 4000000.0) / 100 * c->ipc);
+    }
+    return VC_OK;
+}
+double vc_clock_ipc(const vc_calc *c) { return c ? c->ipc : 0; }
 
 int vc_set_battery(vc_calc *c, double volts) {
     if (!c || volts < 0 || volts > 4) return VC_ERR_ARG;
@@ -609,12 +769,14 @@ const char *vc_key_name(int model, int code) {
 /* ---------------------------------------------------------------- memory */
 int vc_load_memory(vc_calc *c, const uint8_t mem[VC_MEMORY_SIZE]) {
     if (!c || !mem) return VC_ERR_ARG;
+    if (c->family == VC_FAMILY_STOCK) { seterr(c, "HP's original firmware does not keep a Continuous Memory image in the layout this app reads, so memory files cannot be loaded into it"); return VC_ERR_UNSUPPORTED; }
     if (c->engine < 0) return VC_ERR_STATE;
     memcpy(c->sram + (DUMP_ADDR - SRAM_BASE), mem, VC_MEMORY_SIZE);
     return VC_OK;
 }
 int vc_save_memory(vc_calc *c, uint8_t out[VC_MEMORY_SIZE]) {
     if (!c || !out) return VC_ERR_ARG;
+    if (c->family == VC_FAMILY_STOCK) { seterr(c, "HP's original firmware does not keep a Continuous Memory image in the layout this app reads, so its memory cannot be saved to a file"); return VC_ERR_UNSUPPORTED; }
     if (c->engine < 0) return VC_ERR_STATE;
     memcpy(out, c->sram + (DUMP_ADDR - SRAM_BASE), VC_MEMORY_SIZE);
     return VC_OK;
@@ -687,7 +849,7 @@ int vc_get_lcd_segments(vc_calc *c, uint8_t out[VC_LCD_BYTES]) {
  * 255 = never seen lit (no comma after the last three digits on the 16C). */
 static const uint8_t LCD_SEG[10][7] = {{194, 131, 66, 65, 129, 193, 130}, {195, 197, 68, 67, 132, 196, 133}, {199, 136, 71, 70, 134, 198, 135}, {200, 202, 73, 72, 137, 201, 138}, {204, 141, 76, 75, 139, 203, 140}, {205, 207, 78, 77, 142, 206, 143}, {209, 146, 81, 80, 144, 208, 145}, {210, 212, 83, 82, 147, 211, 148}, {214, 151, 86, 85, 149, 213, 150}, {215, 217, 88, 87, 152, 216, 153}};
 static const uint8_t LCD_DOT[10] = {3, 69, 8, 74, 13, 79, 18, 84, 23, 89};
-static const uint8_t LCD_COMMA[10] = {2, 5, 7, 10, 12, 15, 17, 255, 255, 255};
+static const uint8_t LCD_COMMA[10] = {2, 5, 7, 10, 12, 15, 17, 20, 22, 25};   /* the last three are lit only by the all-segments self test (ON + ×) */
 /* nut bits for the runner (same order) */
 static const uint8_t NUT_SEG[10][7] = {{77, 79, 75, 103, 74, 76, 78}, {83, 85, 81, 73, 80, 82, 84}, {107, 109, 105, 69, 104, 106, 108}, {89, 91, 87, 65, 86, 88, 90}, {99, 101, 97, 63, 96, 98, 100}, {11, 13, 9, 15, 8, 10, 12}, {21, 23, 19, 7, 18, 20, 22}, {29, 31, 27, 39, 26, 28, 30}, {47, 49, 45, 33, 44, 46, 48}, {53, 55, 51, 41, 50, 52, 54}};
 static const uint8_t NUT_DOT[10] = {95, 71, 111, 93, 67, 17, 25, 37, 35, 43};
@@ -786,7 +948,7 @@ void vc_get_stats(const vc_calc *c, vc_stats *o) {
 }
 
 /* ---------------------------------------------------------------- for inspect.c (read-only) */
-const uint8_t *vci_dump(const vc_calc *c) { return c && c->engine >= 0 && c->sram ? c->sram + (DUMP_ADDR - SRAM_BASE) : NULL; }
+const uint8_t *vci_dump(const vc_calc *c) { return c && c->engine >= 0 && c->sram && c->family != VC_FAMILY_STOCK ? c->sram + (DUMP_ADDR - SRAM_BASE) : NULL; }
 uint32_t vci_rom_base(const vc_calc *c) {
     if (!c || c->engine < 0) return 0;
     if (c->engine != VC_ENGINE_WHOLE) return A16_ROMBASE;
@@ -794,7 +956,36 @@ uint32_t vci_rom_base(const vc_calc *c) {
     return (uint32_t)p[0] | p[1] << 8 | p[2] << 16 | (uint32_t)p[3] << 24;
 }
 int vci_rom_word(const vc_calc *c, uint32_t rb, uint32_t i) { return rom_word((vc_calc *)c, rb, i); }
+int vci_flash_u16(const vc_calc *c, uint32_t addr) {
+    if (!c || !c->img || addr < FLASH_BASE || addr - FLASH_BASE + 1 >= c->img_len) return -1;
+    return c->img[addr - FLASH_BASE] | c->img[addr - FLASH_BASE + 1] << 8;
+}
 int vci_ext16(const vc_calc *c) { return c ? c->ext16 : 0; }
+/* The 16C memory layout of a 16C Nut ROM at flash address rb in a multi / 3-ROM image (see VC_MEM16_*).
+ * The Path-C ROM (Nut word 0x1D4 = 0x15C) means extended memory. A multi tells E3E3 from E8E8 by the
+ * eight register-address sites of the wrapper: E3E3 left them as `add.w rd, r2, rn, lsl #7` (first
+ * halfword 0xEB02); E8E8 and later branch to caves that give the B7B7 offsets (flash 0x1318A is the first). */
+static int mem16_of_rom(const vc_calc *c, uint32_t rb) {
+    if (vci_rom_word(c, rb, 0x1D4) != 0x15C) return VC_MEM16_STD;
+    return vci_flash_u16(c, 0x1318A) == 0xEB02 ? VC_MEM16_EXT_E3E3 : VC_MEM16_EXT;
+}
+int vc_mem16_layout(const vc_calc *c) {
+    if (!c || vc_model(c) != VC_MODEL_16C) return VC_MEM16_NONE;
+    if (c->family == VC_MODEL_16C) return c->ext16 ? VC_MEM16_EXT : VC_MEM16_STD;
+    return mem16_of_rom(c, vci_rom_base(c));
+}
+/* Same, for the firmware file: the layout its 16C memory has, whatever model is active now. */
+int vc_firmware_mem16(const vc_calc *c) {
+    uint32_t o;
+    if (!c || !c->img || c->family == VC_MODEL_NONE || c->family == VC_FAMILY_STOCK) return VC_MEM16_NONE;
+    if (c->family == VC_MODEL_16C) return c->ext16 ? VC_MEM16_EXT : VC_MEM16_STD;
+    for (o = 0; o + 12 <= c->img_len; o += 2) {
+        const uint8_t *p = c->img + o;
+        if (p[2] != 0x4E || p[3] != 0 || p[4] != 0x70 || p[5] != 2 || p[6] != 0x38 || p[7] != 2 || p[8] != 0xEE || p[9] != 2) continue;
+        if (variant_at((vc_calc *)c, FLASH_BASE + o) == 160) return mem16_of_rom(c, FLASH_BASE + o);
+    }
+    return VC_MEM16_NONE;
+}
 uint32_t vci_busy_ticks(const vc_calc *c) { return c && c->engine == VC_ENGINE_WHOLE ? c->busy : 0; }
 int vci_key_held(const vc_calc *c) {
     int i; if (!c) return 0;

@@ -35,6 +35,12 @@ extension EnvironmentValues {
 /// Mac: ⌘-click or right-click (Hold Key Down) latches the key instead. iOS: holding a key
 /// for 0.8 s latches it (a haptic tick), so it stays down when the finger lifts. A latched
 /// key is let go by clicking it again or by pressing any other key (see KeyLatch).
+/// View ▸ Show Key Help (0.7.1): the tooltip with a key's functions and the keyboard-shortcut bubble on hover.
+/// Off by default (the hover help was intrusive); persisted in UserDefaults, same key as the Qt app's QSettings.
+enum KeyHelp {
+    static let defaultsKey = "showKeyHelp"
+}
+
 struct KeyPressGesture: ViewModifier {
     let code: Int
     @Binding var touching: Bool
@@ -98,8 +104,10 @@ struct KeyView: View {
     let onRelease: () -> Void
 
     @State private var touching = false
+    @AppStorage(KeyHelp.defaultsKey) private var showKeyHelp = false
     @State private var hovering = false
     @State private var hoverG = false
+    @AppStorage(AppModelKeys.legendClicks) private var legendClicks = true
     @Environment(\.latchedKeys) private var latched
 
     private var capColor: Color {
@@ -148,15 +156,14 @@ struct KeyView: View {
                         .lineLimit(1)
                         .frame(width: w * 0.96, height: frontH)
                         .offset(y: h - frontH)
-                    if hoverG {
-                        RoundedRectangle(cornerRadius: w * 0.06, style: .continuous)
-                            .fill(Color(rgb: colors.gLegend).opacity(0.16))
+                    if hoverG && legendClicks {
+                        LegendHighlight(color: Color(rgb: colors.gLegend), corner: w * 0.06, height: frontH)
                             .frame(width: w, height: frontH)
                             .offset(y: h - frontH)
                             .allowsHitTesting(false)
                     }
                 }
-                if hovering, !key.shortcuts.isEmpty {
+                if showKeyHelp, hovering, !key.shortcuts.isEmpty {
                     Text(key.shortcutHint)
                         .font(.system(size: unit * 0.17, weight: .bold, design: .rounded))
                         .padding(.horizontal, 3).padding(.vertical, 1)
@@ -177,7 +184,7 @@ struct KeyView: View {
                 }
             }
             .modifier(KeyPressGesture(code: key.code, touching: $touching,
-                                      onPress: { p in onPress(!key.g.isEmpty && p.y >= h - frontH ? .gLabel : .face) },
+                                      onPress: { p in onPress(legendClicks && !key.g.isEmpty && p.y >= h - frontH ? .gLabel : .face) },
                                       onRelease: onRelease))
             #if os(macOS)
             .onContinuousHover { phase in
@@ -188,7 +195,7 @@ struct KeyView: View {
             }
             #endif
         }
-        .help(key.g.isEmpty ? key.shortcutHelp : key.shortcutHelp + " — blue legend: g \(key.g)")
+        .help(!showKeyHelp ? "" : key.g.isEmpty ? key.shortcutHelp : key.shortcutHelp + " — blue legend: g \(key.g)")
         .accessibilityElement()
         .accessibilityLabel(Text(accessibilityName))
         .accessibilityAddTraits(.isButton)
@@ -215,25 +222,69 @@ struct LegendArea: View {
     let onPress: () -> Void
     let onRelease: () -> Void
     @State private var touching = false
+    @AppStorage(KeyHelp.defaultsKey) private var showKeyHelp = false
     @State private var hovering = false
+    @AppStorage(AppModelKeys.legendClicks) private var legendClicks = true
 
     var body: some View {
         Color.clear
             .contentShape(Rectangle())
             .background {
-                if hovering || touching {
-                    RoundedRectangle(cornerRadius: 3, style: .continuous)
-                        .fill(Color(rgb: colors.fLegend).opacity(touching ? 0.28 : 0.14))
+                if legendClicks && (hovering || touching) {
+                    GeometryReader { g in
+                        LegendHighlight(color: Color(rgb: colors.fLegend), height: g.size.height, pressed: touching)
+                    }
                 }
             }
             .modifier(KeyPressGesture(code: key.code, touching: $touching, onPress: { _ in onPress() }, onRelease: onRelease))
             #if os(macOS)
             .onHover { hovering = $0 }
             #endif
-            .help("f \(key.f) — f, then \(key.face)")
+            .help(showKeyHelp ? "f \(key.f) — f, then \(key.face)" : "")
             .accessibilityElement()
             .accessibilityLabel(Text("f \(key.f)"))
             .accessibilityAddTraits(.isButton)
             .accessibilityAction { onPress(); onRelease() }
+    }
+}
+
+/// UserDefaults keys of the 0.7.1 View options (shared by AppModel and the face views).
+enum AppModelKeys {
+    /// View ▸ Click f/g Labels (on by default).
+    static let legendClicks = "legendClicks"
+    /// View ▸ Key Click Sound (off by default).
+    static let keyClickSound = "keyClickSound"
+}
+
+/// The highlight on a clickable gold / blue legend under the pointer (0.7.1: brighter, a fill plus an outline, as the Qt app:
+/// fill alpha 0.40, outline the colour 25 % lighter at alpha 0.95, line max(1.2, 6 % of the zone height)).
+struct LegendHighlight: View {
+    let color: Color
+    var corner: CGFloat = 3
+    var height: CGFloat
+    var pressed = false
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: corner, style: .continuous)
+            .fill(color.opacity(pressed ? 0.55 : 0.40))
+            .overlay(RoundedRectangle(cornerRadius: corner, style: .continuous)
+                        .strokeBorder(color.lighter125.opacity(0.95), lineWidth: max(1.2, height * 0.06)))
+    }
+}
+
+extension Color {
+    /// QColor::lighter(125) approximated: brightness x 1.25 in HSB (saturation kept).
+    var lighter125: Color {
+        #if os(macOS)
+        let c = NSColor(self).usingColorSpace(.sRGB) ?? .white
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        c.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return Color(hue: h, saturation: s, brightness: min(1, b * 1.25), opacity: a)
+        #else
+        let c = UIColor(self)
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        c.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return Color(hue: h, saturation: s, brightness: min(1, b * 1.25), opacity: a)
+        #endif
     }
 }

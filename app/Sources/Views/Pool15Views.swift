@@ -90,6 +90,7 @@ struct MatrixRow: View {
     let m: MatrixValue
     @State private var expanded = false
     @Environment(\.inspectorStatic) private var isStatic
+    @Environment(\.colorScheme) private var scheme
     private var open: Bool { (expanded || isStatic) && !m.isEmpty && !m.values.isEmpty }
 
     var body: some View {
@@ -105,7 +106,7 @@ struct MatrixRow: View {
                         .font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1).minimumScaleFactor(0.7)
                 }
                 Spacer()
-                if m.isResult { Tag("RESULT", color: InspectorColors.f) }
+                if m.isResult { Tag("RESULT", color: InspectorColors.f(scheme)) }
             }
             .opacity(m.isEmpty ? 0.45 : 1)
             .contentShape(Rectangle())

@@ -84,8 +84,29 @@ public struct LegendBracket: Sendable {
 
 public struct Annunciator: Sendable, Equatable {
     public let label: String
-    public let bit: Int          // LCD memory bit
+    public let bit: Int          // LCD memory bit (-1: not found in the LCD memory yet, never lit)
     public let cell: Double      // horizontal position, in digit cells from the left (0...10)
+
+    /// Whether this annunciator's segment is set in the raw LCD bits.
+    public func isLit(_ bits: UInt64) -> Bool { bit >= 0 && bit < 64 && bits >> UInt64(bit) & 1 == 1 }
+
+    /// The Voyager LCD glass is the same part on the 12C, 15C and 16C: every annunciator is printed on it at a fixed
+    /// place, and each one is visible only when the firmware lights its segment. So all models share one layout (the
+    /// all-segments self test, ON + ×, then looks the same on every model, as on the real calculators). Same table as
+    /// kVoyagerAnnunciators in the Qt app. RAD sits right after G (together "GRAD"). The low-battery "*" segment has
+    /// not been found in the LCD memory yet (bit -1: drawn unlit, never lit).
+    public static let voyager: [Annunciator] = [
+        Annunciator(label: "*", bit: -1, cell: -0.05),
+        Annunciator(label: "USER", bit: 4, cell: 0.75),
+        Annunciator(label: "f", bit: 6, cell: 2.45),
+        Annunciator(label: "g", bit: 9, cell: 3.15),
+        Annunciator(label: "BEGIN", bit: 11, cell: 3.85),
+        Annunciator(label: "G", bit: 14, cell: 5.35),
+        Annunciator(label: "RAD", bit: 16, cell: 5.35),
+        Annunciator(label: "D.MY", bit: 19, cell: 6.85),
+        Annunciator(label: "C", bit: 21, cell: 8.0),
+        Annunciator(label: "PRGM", bit: 24, cell: 8.55),
+    ]
 }
 
 public struct ModelColors: Sendable {
@@ -106,7 +127,7 @@ public struct CalculatorModel: Identifiable, Sendable {
     public let id: Int                // 12, 15, 16
     public let name: String           // "16C"
     public let subtitle: String       // neutral description
-    public let fileExtension: String  // "16c"
+    public let fileExtension: String  // "bin16c" (0.6.9; the old .16c is still read)
     public let keys: [KeySpec]
     public let brackets: [LegendBracket]
     public let annunciators: [Annunciator]

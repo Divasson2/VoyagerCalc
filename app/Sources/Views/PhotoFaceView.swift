@@ -57,7 +57,6 @@ struct PhotoCalculatorFace: View {
     let face: PhotoFace
     let lcd: LCDState
     let pressed: Set<Int>
-    var turbo = false
     var press: (Int) -> Void = { _ in }
     var release: (Int) -> Void = { _ in }
     /// A press on a key's gold / blue legend (nil: the key alone).
@@ -74,6 +73,16 @@ struct PhotoCalculatorFace: View {
                     photo.resizable().interpolation(.high)
                         .frame(width: size.width, height: size.height)
                     let l = rect(face.lcd, in: size)
+                    if let lift = PhotoCalculatorFace.lcdLift(model: model.id) {
+                        // 0.7.1: the LCD background is the photo's glass lifted to a lighter grey (fixed per model, no option), as the
+                        // Qt app: screen blend of the lift colour over the glass (rounded 4 % of its height); segments drawn on top.
+                        RoundedRectangle(cornerRadius: l.height * 0.04, style: .continuous)
+                            .fill(Color(rgb: lift))
+                            .frame(width: l.width, height: l.height)
+                            .offset(x: l.minX, y: l.minY)
+                            .blendMode(.screen)
+                            .allowsHitTesting(false)
+                    }
                     LCDView(lcd: lcd, model: model, overPhoto: true)
                         .frame(width: l.width, height: l.height)
                         .offset(x: l.minX, y: l.minY)
@@ -99,25 +108,23 @@ struct PhotoCalculatorFace: View {
                                 .offset(x: r.minX, y: r.minY)
                         }
                     }
-                    if turbo {
-                        Text("TURBO")
-                            .font(.system(size: max(7, size.height * 0.022), weight: .heavy, design: .rounded))
-                            .foregroundColor(Color(rgb: 0xE3A63A))
-                            .padding(.horizontal, 4)
-                            .overlay(Capsule().stroke(Color(rgb: 0xE3A63A), lineWidth: 1))
-                            .offset(x: l.minX, y: l.maxY + size.height * 0.012)
-                            .allowsHitTesting(false)
-                    }
                 }
                 .frame(width: size.width, height: size.height, alignment: .topLeading)
                 .offset(x: origin.x, y: origin.y)
             } else {
                 // image missing from the bundle: fall back to the drawn face
-                CalculatorFace(model: model, lcd: lcd, pressed: pressed, layout: .landscape, turbo: turbo,
+                CalculatorFace(model: model, lcd: lcd, pressed: pressed, layout: .landscape,
                                press: press, release: release, pressPart: pressPart)
             }
         }
     }
+
+    /// The colour screened over the photo's LCD glass (Qt CalculatorWidget::lcdLift): 15C and 16C 0x666666; nil for the 12C,
+    /// which keeps the photo's original glass.
+    static func lcdLift(model: Int) -> UInt32? { model == 12 ? nil : 0x666666 }
+
+    /// Screen blend of one 8-bit channel (what `.blendMode(.screen)` does): 1 - (1 - a)(1 - b).
+    static func screen(_ a: UInt8, _ b: UInt8) -> UInt8 { UInt8((255 * 255 - (255 - Int(a)) * (255 - Int(b)) + 127) / 255) }
 
     private func rect(_ r: CGRect, in size: CGSize) -> CGRect {
         CGRect(x: r.minX * size.width, y: r.minY * size.height, width: r.width * size.width, height: r.height * size.height)
@@ -171,6 +178,8 @@ private struct PhotoKeyArea: View {
     @State private var touching = false
     @State private var hovering = false
     @State private var hoverPart: KeyPart?
+    @AppStorage(KeyHelp.defaultsKey) private var showKeyHelp = false
+    @AppStorage(AppModelKeys.legendClicks) private var legendClicks = true
     @Environment(\.latchedKeys) private var latched
 
     var body: some View {
@@ -178,9 +187,9 @@ private struct PhotoKeyArea: View {
             .contentShape(Rectangle())
             .overlay(alignment: .topLeading) {
                 // a subtle highlight on the legend under the pointer
-                if let p = hoverPart, p != .face, let r = zones?.rect(p) {
-                    RoundedRectangle(cornerRadius: unit * 0.08, style: .continuous)
-                        .fill((p == .fLabel ? Color(rgb: 0xE3A63A) : Color(rgb: 0x5DA9E8)).opacity(0.18))
+                if legendClicks, let p = hoverPart, p != .face, let r = zones?.rect(p) {
+                    LegendHighlight(color: p == .fLabel ? Color(rgb: 0xE3A63A) : Color(rgb: 0x5DA9E8),
+                                    corner: unit * 0.08, height: r.height)
                         .frame(width: r.width, height: r.height)
                         .offset(x: r.minX, y: r.minY)
                         .allowsHitTesting(false)
@@ -188,7 +197,7 @@ private struct PhotoKeyArea: View {
             }
             .overlay(alignment: .top) {
                 // the keyboard shortcut, over the cap (not over the legends)
-                if hovering, hoverPart == nil || hoverPart == .face, !key.shortcuts.isEmpty {
+                if showKeyHelp, hovering, !legendClicks || hoverPart == nil || hoverPart == .face, !key.shortcuts.isEmpty {
                     Text(key.shortcutHint)
                         .font(.system(size: max(8, unit * 0.2), weight: .bold, design: .rounded))
                         .padding(.horizontal, 3).padding(.vertical, 1)
@@ -206,7 +215,7 @@ private struct PhotoKeyArea: View {
                 }
             }
             .modifier(KeyPressGesture(code: key.code, touching: $touching,
-                                      onPress: { p in onPress(zones?.part(at: p) ?? .face) }, onRelease: onRelease))
+                                      onPress: { p in onPress(legendClicks ? zones?.part(at: p) ?? .face : .face) }, onRelease: onRelease))
             #if os(macOS)
             .onContinuousHover { phase in
                 switch phase {
@@ -215,7 +224,7 @@ private struct PhotoKeyArea: View {
                 }
             }
             #endif
-            .help(helpText)
+            .help(showKeyHelp ? helpText : "")
             .accessibilityElement()
             .accessibilityLabel(Text(accessibilityName))
             .accessibilityAddTraits(.isButton)

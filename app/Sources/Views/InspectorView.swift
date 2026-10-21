@@ -30,11 +30,23 @@ extension EnvironmentValues {
 }
 
 enum InspectorColors {
-    static let f = Color(rgb: 0xE3A33B)          // gold f legends
-    static let g = Color(rgb: 0x5AA9E6)          // blue g legends
+    // 0.6.5: the flyout panel stays light grey in the light appearance; the f / g legends use darker
+    // colours there so they reach WCAG 4.5:1 on it (the bright gold / blue only gave 1.9:1 / 2.2:1).
+    // The hex values are public so a test can compute the contrast ratios.
+    static let panelLight: UInt32 = 0xECECEC, panelDark: UInt32 = 0x2C2C2E
+    static let fLight: UInt32 = 0x7F4F00, fDark: UInt32 = 0xE3A33B
+    static let gLight: UInt32 = 0x0A4F8C, gDark: UInt32 = 0x5AA9E6
+    static let runningLight: UInt32 = 0x1B7A3C, runningDark: UInt32 = 0x4CBF6B
+    static func panel(_ s: ColorScheme) -> Color { Color(rgb: s == .dark ? panelDark : panelLight) }
+    /// 0.7.1: section headers (Stack, Memory, Matrices, Storage registers, Program) are opaque: the panel colour with a
+    /// header tint composed on top, alpha 1, so pinned headers hide the rows scrolling under them (was the translucent .bar).
+    static let headerLight: UInt32 = 0xE0E0E0, headerDark: UInt32 = 0x3A3A3C
+    static func header(_ s: ColorScheme) -> Color { Color(rgb: s == .dark ? headerDark : headerLight) }
+    static func f(_ s: ColorScheme) -> Color { Color(rgb: s == .dark ? fDark : fLight) }          // gold f legends
+    static func g(_ s: ColorScheme) -> Color { Color(rgb: s == .dark ? gDark : gLight) }          // blue g legends
     static let changed = Color(rgb: 0xF2C14E)
     static let pointer = Color.accentColor
-    static let running = Color(rgb: 0x4CBF6B)
+    static func running(_ s: ColorScheme) -> Color { Color(rgb: s == .dark ? runningDark : runningLight) }
 
     /// The program pointer: a soft green band behind the current line, a little stronger while
     /// a program runs. Light appearance: light green under dark text; dark appearance: a muted
@@ -43,8 +55,8 @@ enum InspectorColors {
         scheme == .dark ? Color(rgb: running ? 0x3A7D4A : 0x2E5E3A) : Color(rgb: running ? 0xB4E5B4 : 0xD3F1D3)
     }
     /// f / g legend colours readable on the band.
-    static func fOnBand(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color(rgb: 0xF2C060) : Color(rgb: 0x9A620A) }
-    static func gOnBand(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color(rgb: 0x8CC8F5) : Color(rgb: 0x1C639E) }
+    static func fOnBand(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color(rgb: 0xF2C060) : Color(rgb: fLight) }
+    static func gOnBand(_ scheme: ColorScheme) -> Color { scheme == .dark ? Color(rgb: 0x8CC8F5) : Color(rgb: gLight) }
 }
 
 struct InspectorView: View {
@@ -52,6 +64,7 @@ struct InspectorView: View {
     @AppStorage("inspectorPane") private var pane: InspectorPane = .both
     var compact = false                          // iPhone panel: smaller header
     @Environment(\.inspectorStatic) private var isStatic
+    @Environment(\.colorScheme) private var scheme
     @State private var draft = ""
 
     /// Step comments of the program notes, by step (0.5.6).
@@ -86,12 +99,14 @@ struct InspectorView: View {
                 }
             } else {
                 ContentUnavailableView("Nothing to inspect", systemImage: "memorychip",
-                                       description: Text(app.isRunning ? "The calculator is switching models." : "Choose a firmware file first."))
+                                       description: Text(app.isStock ? "HP's original 12C firmware keeps its registers and program in a layout this panel cannot read, so Registers & Program is not available with it."
+                                                         : app.isRunning ? "The calculator is switching models." : "Choose a firmware file first."))
             }
         }
         .font(.system(size: 12))
         .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity, alignment: .top)
         .clipped()
+        .background(InspectorColors.panel(scheme))
         .alert(app.editingCommentStep.map { "Comment for step \(String(format: app.inspection?.model == 12 ? "%02d" : "%03d", $0))" } ?? "",
                isPresented: Binding(get: { app.editingCommentStep != nil }, set: { if !$0 { app.editingCommentStep = nil } })) {
             TextField("Comment", text: $draft)
@@ -107,6 +122,7 @@ struct InspectorView: View {
 /// Model, modes, flags, run state and program line.
 struct InspectorHeader: View {
     let s: InspectorSnapshot
+    @Environment(\.colorScheme) private var scheme
     var compact = false
 
     private var modelName: String { s.model == 15 && s.variant == 152 ? "HP-15C (15.2)" : "HP-\(s.model)C" }
@@ -118,8 +134,8 @@ struct InspectorHeader: View {
                 if s.extendedMemory { Tag("ext. memory", color: .secondary) }
                 if s.isComplex { Tag("Complex", color: Color(rgb: 0xE07A5F)) }
                 Spacer()
-                if s.running { Tag("RUNNING", color: InspectorColors.running) }
-                else if s.programMode { Tag("PRGM", color: InspectorColors.f) }
+                if s.running { Tag("RUNNING", color: InspectorColors.running(scheme)) }
+                else if s.programMode { Tag("PRGM", color: InspectorColors.f(scheme)) }
             }
             HStack(spacing: 8) {
                 if !s.modeSummary.isEmpty { Text(s.modeSummary).monospaced() }
@@ -223,6 +239,7 @@ struct RegistersPanel: View {
 struct SectionHeader<Trailing: View>: View {
     let title: String
     @ViewBuilder var trailing: Trailing
+    @Environment(\.colorScheme) private var scheme
     var body: some View {
         HStack {
             Text(title.uppercased()).font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
@@ -230,7 +247,7 @@ struct SectionHeader<Trailing: View>: View {
             trailing
         }
         .padding(.horizontal, 10).padding(.vertical, 4)
-        .background(.bar)
+        .background(InspectorColors.header(scheme))         // opaque (0.7.1)
         .fixedSize(horizontal: false, vertical: true)
     }
 }
@@ -394,6 +411,6 @@ struct ProgramRow: View {
 
     private var prefixColor: Color {
         if current { return prefix == "f" ? InspectorColors.fOnBand(scheme) : InspectorColors.gOnBand(scheme) }
-        return prefix == "f" ? InspectorColors.f : InspectorColors.g
+        return prefix == "f" ? InspectorColors.f(scheme) : InspectorColors.g(scheme)
     }
 }

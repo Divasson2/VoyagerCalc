@@ -40,6 +40,10 @@ echo "== HP-12C CE multi: model switch"
 [ -f /workspace/HP12c-multi.bin ] && ./build/test_multi /workspace/HP12c-multi.bin || true
 echo "== inspection API (registers, modes, listings, pointer, read-only)"
 ./build/test_inspect
+echo "== inspection API on the multi with extended 16C memory (E8E8, B7B7 layout)"
+[ -f /workspace/Firmware/HP12c-multi-152-ext16-feat-E8E8.bin ] && MULTI=/workspace/Firmware/HP12c-multi-152-ext16-feat-E8E8.bin ./build/test_inspect || true
+echo "== 16C memory layouts: standard / extended (B7B7 = E8E8) / early E3E3, pre-check, converter, B7B7 <-> E8E8"
+./build/test_mem16
 echo "== registers: C core vs the Python simulator's view"
 tests/compare_inspect.sh "$B7" "$M" "2147483647 GSB A"
 tests/compare_inspect.sh "$B5" "$M5" "2147483647 GSB A"

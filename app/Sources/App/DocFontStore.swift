@@ -1,26 +1,22 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) 2026 José González Divassón
 //
-// DocFontStore.swift - the user's own HP 15C fonts for the documentation PDF (0.5.7):
+// DocFontStore.swift - the two HP 15C Simulator fonts of the documentation PDF:
 // HP15CSimulatorDisplay.ttf (seven-segment display) and HP15CSimulatorKeys.ttf (key caps).
-// They are never bundled. Looked for, in order:
-//   1. what the user chose with "Use HP 15C Fonts…" (a folder or a font file; macOS keeps a
-//      security-scoped bookmark, so the sandboxed app can read it after relaunch; iOS copies
-//      the chosen fonts into the app's own container),
-//   2. ~/Firmware/Fonts (the real home folder; readable by the no-sandbox build, and by the
-//      sandboxed build only once that folder was chosen in step 1).
-// Each font is read from its file (never looked up by family name: both original fonts are called
-// "HP15C Simulator Font"). Fonts not found: the standard PDF fonts are used.
+// Since 0.6.7 they are part of the app: both files sit in the app bundle (Contents/Resources on the
+// Mac, the bundle folder on iOS), and the PDF always uses them; there is nothing to choose.
+// Credit: the key-cap font was designed by Eric Rechlin, the seven-segment display font by Torsten Manz
+// ("HP15C Simulator Font (c) 2005 Torsten Manz, Freeware"). Jose confirmed both may be redistributed. The
+// fonts are renamed copies (name table only; the copyright fields are kept as they were) and the credit is
+// in About, the README and art/fonts/README.md.
+// Each font is read from its file (never looked up by family name) and embedded as a subset in the PDF.
+// Fonts missing from the bundle (not expected): the standard PDF fonts are used, as before.
 
 import Foundation
-#if canImport(Darwin)
-import Darwin
-#endif
 
 struct DocFonts {
     var keys: TrueTypeFont?
     var display: TrueTypeFont?
-    var source = ""
     var any: Bool { keys != nil || display != nil }
     /// A fresh set per document (it records which glyphs that document draws).
     func pdfSet() -> PDFFontSet { PDFFontSet(keys: keys, display: display) }
@@ -34,54 +30,34 @@ struct DocFonts {
     }
 }
 
-final class DocFontStore: @unchecked Sendable {   // UserDefaults and file reads only
+final class DocFontStore: @unchecked Sendable {   // file reads only
     static let keysFile = "HP15CSimulatorKeys.ttf", displayFile = "HP15CSimulatorDisplay.ttf"
-    private let defaults = UserDefaults.standard
-    private let folderKey = "docFontFolderBookmark", keysKey = "docFontKeysBookmark", displayKey = "docFontDisplayBookmark"
 
-    /// The real home folder (in the sandbox, NSHomeDirectory is the container).
-    static var realHome: URL {
-        #if os(macOS)
-        if let pw = getpwuid(getuid()), let dir = pw.pointee.pw_dir {
-            return URL(fileURLWithPath: String(cString: dir), isDirectory: true)
+    /// The credit shown in About (and kept in the README and art/fonts/README.md): Manz's freeware copyright notice stays with the display font.
+    static let credit = "Documentation PDF fonts, included with the app: key-cap font by Eric Rechlin; seven-segment display font by Torsten Manz (HP15C Simulator Font © 2005 Torsten Manz, Freeware). The font files are renamed copies (name table only) that keep their copyright notices."
+
+    /// The bundles searched: the one holding this code (the app, or the test bundle in tests), then the main bundle.
+    private static var bundles: [Bundle] { [Bundle(for: DocFontStore.self), Bundle.main] }
+
+    /// The file inside the app bundle (Resources/ or Resources/Fonts/), nil if it is not there.
+    static func bundledURL(_ file: String) -> URL? {
+        let name = (file as NSString).deletingPathExtension, ext = (file as NSString).pathExtension
+        for b in bundles {
+            if let u = b.url(forResource: name, withExtension: ext) { return u }
+            if let u = b.url(forResource: name, withExtension: ext, subdirectory: "Fonts") { return u }
         }
-        #endif
-        return URL(fileURLWithPath: NSHomeDirectory(), isDirectory: true)
-    }
-    static var defaultFolder: URL { realHome.appendingPathComponent("Firmware/Fonts", isDirectory: true) }
-
-    private var copyDir: URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-            .appendingPathComponent("Fonts", isDirectory: true)
+        return nil
     }
 
+    /// Both fonts from the bundle (read again at every call; they are small).
     func load() -> DocFonts {
         var f = DocFonts()
-        func take(_ data: Data?, _ from: String) {
-            guard let data, let t = try? TrueTypeFont(data: data) else { return }
-            switch Self.role(t) {
-            case .keys: if f.keys == nil { f.keys = t; f.source = from }
-            case .display: if f.display == nil { f.display = t; if f.source.isEmpty { f.source = from } }
-            case nil: break
-            }
+        func read(_ file: String) -> TrueTypeFont? {
+            guard let u = Self.bundledURL(file), let data = try? Data(contentsOf: u) else { return nil }
+            return try? TrueTypeFont(data: data)
         }
-        #if os(macOS)
-        if let dir = resolve(folderKey) {
-            withAccess(dir) {
-                take(try? Data(contentsOf: dir.appendingPathComponent(Self.keysFile)), dir.path)
-                take(try? Data(contentsOf: dir.appendingPathComponent(Self.displayFile)), dir.path)
-            }
-        }
-        for k in [keysKey, displayKey] {
-            if let u = resolve(k) { withAccess(u) { take(try? Data(contentsOf: u), u.path) } }
-        }
-        #else
-        take(try? Data(contentsOf: copyDir.appendingPathComponent(Self.keysFile)), "app container")
-        take(try? Data(contentsOf: copyDir.appendingPathComponent(Self.displayFile)), "app container")
-        #endif
-        let d = Self.defaultFolder
-        if f.keys == nil { take(try? Data(contentsOf: d.appendingPathComponent(Self.keysFile)), d.path) }
-        if f.display == nil { take(try? Data(contentsOf: d.appendingPathComponent(Self.displayFile)), d.path) }
+        if let t = read(Self.keysFile), Self.role(t) == .keys { f.keys = t }
+        if let t = read(Self.displayFile), Self.role(t) == .display { f.display = t }
         return f
     }
 
@@ -93,61 +69,4 @@ final class DocFontStore: @unchecked Sendable {   // UserDefaults and file reads
         if t.has("8"), t.has(","), t.has("-") { return .display }
         return nil
     }
-
-    /// "Use HP 15C Fonts…": a folder holding the two files, or one font file.
-    func remember(_ url: URL) throws -> DocFonts {
-        let ok = url.startAccessingSecurityScopedResource()
-        defer { if ok { url.stopAccessingSecurityScopedResource() } }
-        var isDir: ObjCBool = false
-        FileManager.default.fileExists(atPath: url.path, isDirectory: &isDir)
-        #if os(macOS)
-        let bm = try url.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
-                                      includingResourceValuesForKeys: nil, relativeTo: nil)
-        if isDir.boolValue {
-            defaults.set(bm, forKey: folderKey)
-        } else {
-            let t = try TrueTypeFont(data: Data(contentsOf: url))
-            guard let r = Self.role(t) else { throw CocoaError(.fileReadCorruptFile) }
-            defaults.set(bm, forKey: r == .keys ? keysKey : displayKey)
-        }
-        #else
-        try FileManager.default.createDirectory(at: copyDir, withIntermediateDirectories: true)
-        let files = isDir.boolValue
-            ? [url.appendingPathComponent(Self.keysFile), url.appendingPathComponent(Self.displayFile)] : [url]
-        for u in files {
-            guard let data = try? Data(contentsOf: u), let t = try? TrueTypeFont(data: data), let r = Self.role(t) else { continue }
-            try data.write(to: copyDir.appendingPathComponent(r == .keys ? Self.keysFile : Self.displayFile))
-        }
-        #endif
-        return load()
-    }
-
-    func forget() {
-        for k in [folderKey, keysKey, displayKey] { defaults.removeObject(forKey: k) }
-        try? FileManager.default.removeItem(at: copyDir)
-    }
-
-    #if os(macOS)
-    private func resolve(_ key: String) -> URL? {
-        guard let bm = defaults.data(forKey: key) else { return nil }
-        var stale = false
-        guard let u = try? URL(resolvingBookmarkData: bm, options: [.withSecurityScope], relativeTo: nil,
-                               bookmarkDataIsStale: &stale) else { return nil }
-        if stale {
-            let ok = u.startAccessingSecurityScopedResource()
-            if let fresh = try? u.bookmarkData(options: [.withSecurityScope, .securityScopeAllowOnlyReadAccess],
-                                               includingResourceValuesForKeys: nil, relativeTo: nil) {
-                defaults.set(fresh, forKey: key)
-            }
-            if ok { u.stopAccessingSecurityScopedResource() }
-        }
-        return u
-    }
-    @discardableResult
-    private func withAccess<T>(_ u: URL, _ body: () -> T) -> T? {
-        let ok = u.startAccessingSecurityScopedResource()
-        defer { if ok { u.stopAccessingSecurityScopedResource() } }
-        return body()
-    }
-    #endif
 }

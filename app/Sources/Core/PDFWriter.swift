@@ -7,8 +7,8 @@
 // Symbol; nothing embedded). Text is laid out here with the fonts' own metrics. The calculator
 // legends' special characters are drawn from Symbol (Σ π √ ∫ ≤ ≠ ← →) or built: ˣ ʸ ⁻ as
 // superscripts, ₓ as subscript, x̄ / x̂ as accents over the letter, ≷ as a small > over <.
-// 0.5.7: TrueType fonts the user owns (the HP 15C key-cap font, a seven-segment display font)
-// can be added (PDFFontSet); they are embedded as subsets (Type0 / CIDFontType2, Identity-H, with
+// 0.5.7: TrueType fonts (the HP 15C key-cap font, a seven-segment display font; bundled with the
+// app since 0.6.7) can be added (PDFFontSet); they are embedded as subsets (Type0 / CIDFontType2, Identity-H, with
 // a ToUnicode map so the text can still be searched and copied). Without them the standard
 // fonts are used.
 // Coordinates: points, origin top-left, y downwards (converted when written).

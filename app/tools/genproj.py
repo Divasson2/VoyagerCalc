@@ -50,6 +50,7 @@ c_src = sorted(glob.glob(os.path.join(ROOT, "core/src/*.c")))
 c_hdr = sorted(glob.glob(os.path.join(ROOT, "core/src/*.h"))) + [os.path.join(ROOT, "core/include/voyager_core.h"), os.path.join(ROOT, "core/include/module.modulemap")]
 tests = sorted(glob.glob(os.path.join(APP, "Tests/KitTests/*.swift")) + glob.glob(os.path.join(APP, "Tests/AppTests/*.swift")))
 faces = sorted(glob.glob(os.path.join(APP, "Resources/Faces/*.png")))   # photo faces (art/tools/make_faces.py)
+fonts = sorted(glob.glob(os.path.join(APP, "Resources/Fonts/*.ttf")))   # 0.6.7: the two HP 15C Simulator fonts (art/fonts), bundled
 mac_assets = os.path.join(APP, "Resources/macOS/Assets.xcassets")   # app icon (art/icon/make_appiconsets.py)
 ios_assets = os.path.join(APP, "Resources/iOS/Assets.xcassets")
 plists = [os.path.join(APP, p) for p in ["Resources/macOS/Info.plist", "Resources/iOS/Info.plist", "Resources/macOS/VoyagerCalc.entitlements"]]
@@ -57,7 +58,7 @@ plists = [os.path.join(APP, p) for p in ["Resources/macOS/Info.plist", "Resource
 def ftype(p):
     e = os.path.splitext(p)[1]
     return {".swift": "sourcecode.swift", ".c": "sourcecode.c.c", ".h": "sourcecode.c.h", ".plist": "text.plist.xml",
-            ".entitlements": "text.plist.entitlements", ".modulemap": "sourcecode.module-map", ".png": "image.png", ".xcassets": "folder.assetcatalog"}.get(e, "text")
+            ".entitlements": "text.plist.entitlements", ".modulemap": "sourcecode.module-map", ".png": "image.png", ".ttf": "file", ".xcassets": "folder.assetcatalog"}.get(e, "text")
 
 fileref = {}
 def fref(p):
@@ -78,7 +79,8 @@ g_views = group("Views", swift_views)
 g_c = group("C core (../core)", c_src + c_hdr)
 g_tests = group("Tests", tests)
 g_faces = group("Faces", faces)
-g_res = group("Resources", plists + [mac_assets, ios_assets], [g_faces])
+g_fonts = group("Fonts", fonts)
+g_res = group("Resources", plists + [mac_assets, ios_assets], [g_faces, g_fonts])
 
 products = {}
 def product(name, kind, ext):
@@ -99,7 +101,7 @@ common = {
     "HEADER_SEARCH_PATHS": "$(SRCROOT)/../core/include",
     "GCC_C_LANGUAGE_STANDARD": "c11",
     "CLANG_ENABLE_MODULES": "YES",
-    "MARKETING_VERSION": "0.6.4",
+    "MARKETING_VERSION": "0.7.1",
     "CURRENT_PROJECT_VERSION": "1",
     "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
 }
@@ -140,18 +142,18 @@ t_mac = target("VoyagerCalc-macOS", p_mac, "com.apple.product-type.application",
     "CODE_SIGN_STYLE": "Manual", "CODE_SIGN_IDENTITY": "-", "DEVELOPMENT_TEAM": "",
     "ENABLE_HARDENED_RUNTIME": "YES", "COMBINE_HIDPI_IMAGES": "YES",
     "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/../Frameworks",
-    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}, faces + [mac_assets])
+    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}, faces + fonts + [mac_assets])
 t_ios = target("VoyagerCalc-iOS", p_ios, "com.apple.product-type.application", app_sources, {
     "PRODUCT_NAME": "VoyagerCalc", "PRODUCT_BUNDLE_IDENTIFIER": BUNDLE_ID, "SDKROOT": "iphoneos",
     "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator", "IPHONEOS_DEPLOYMENT_TARGET": "17.0", "TARGETED_DEVICE_FAMILY": "1,2",
     "INFOPLIST_FILE": "Resources/iOS/Info.plist", "CODE_SIGN_STYLE": "Automatic", "DEVELOPMENT_TEAM": "",
     "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/Frameworks",
-    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}, faces + [ios_assets])
+    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}, faces + fonts + [ios_assets])
 t_test = target("VoyagerCalcTests", p_test, "com.apple.product-type.bundle.unit-test", lib_sources + tests, {
     "PRODUCT_NAME": "VoyagerCalcTests", "PRODUCT_BUNDLE_IDENTIFIER": BUNDLE_ID + ".tests", "SDKROOT": "macosx",
     "SUPPORTED_PLATFORMS": "macosx", "MACOSX_DEPLOYMENT_TARGET": "14.0", "GENERATE_INFOPLIST_FILE": "YES",
     "CODE_SIGN_STYLE": "Manual", "CODE_SIGN_IDENTITY": "-", "DEVELOPMENT_TEAM": "",
-    "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks"}, faces)
+    "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/../Frameworks @loader_path/../Frameworks"}, faces + fonts)
 
 proj_cfgs = []
 for cfg in ("Debug", "Release"):

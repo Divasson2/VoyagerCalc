@@ -7,7 +7,7 @@ import Foundation
 
 extension CalculatorModel {
     public static let hp16c = CalculatorModel(
-        id: 16, name: "16C", subtitle: "Programmer", fileExtension: "16c",
+        id: 16, name: "16C", subtitle: "Programmer", fileExtension: "bin16c",
         keys: [
             KeySpec(0, "A", f: "SL", g: "LJ", keys: [.char("a")]),
             KeySpec(1, "B", f: "SR", g: "ASR", keys: [.char("b")]),
@@ -54,12 +54,6 @@ extension CalculatorModel {
         ],
         brackets: [LegendBracket(label: "SHOW", fromCode: 12, toCode: 15),
                    LegendBracket(label: "CLEAR", fromCode: 22, toCode: 24)],
-        annunciators: [
-            Annunciator(label: "f", bit: 6, cell: 3.0),
-            Annunciator(label: "g", bit: 9, cell: 4.0),
-            Annunciator(label: "C", bit: 21, cell: 7.6),
-            Annunciator(label: "G", bit: 14, cell: 6.3),
-            Annunciator(label: "PRGM", bit: 24, cell: 8.6),
-        ],
+        annunciators: Annunciator.voyager,      // one glass, one layout for every model
         colors: .voyager(band: 0xB79A63, lcd: ModelColors.greyLCD))
 }

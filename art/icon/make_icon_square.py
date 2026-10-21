@@ -10,6 +10,11 @@ def grad(w,h,stops):
     return Image.fromarray(np.clip(out,0,255).astype('uint8')).convert("RGBA")
 silver=[(0,(226,229,222)),(0.5,(205,209,200)),(1,(218,221,212))]
 gold=[(0,(216,186,100)),(0.5,(197,164,80)),(1,(209,178,92))]
+# 0.6.7: the panels of the other two models. 0.6.5 had (70,70,70)..(60,60,60), too dark to read the lettering;
+# they are now LIFT (18 %) of the way from that dark grey to the lit silver's mean tone (neutral grey, so no tint).
+LIFT=0.18
+_LIT=sum(sum(c) / 3 for _, c in silver) / len(silver)          # mean tone of the lit silver panel (about 214)
+DIM=[(0,(round(70+(_LIT-70)*LIFT),)*3),(1,(round(60+(_LIT-60)*LIFT),)*3)]
 def word(t):
     from PIL import ImageFilter
     m=Image.open(f"jose/w_{t}.png").convert("L").filter(ImageFilter.GaussianBlur(6))
@@ -38,11 +43,16 @@ def badge1(t,g,corner=0.04,border=0.055):
     b=int(W*border); gp=int(W*0.03); ph=(W-2*b-2*gp)//3
     for i,tt in enumerate(["12C","15C","16C"]):
         y0=b+i*(ph+gp)
-        gg=g if tt==t else [(0,(70,70,70)),(1,(60,60,60))]
+        gg=g if tt==t else DIM
         panel(img,(b,y0,W-b,y0+ph),tt,gg)
     return img.resize((S,S),Image.LANCZOS)
 if __name__=="__main__":
+    import sys
+    if "--emblems-only" in sys.argv:       # 0.6.7: only the three per-face emblems (the app icon is unchanged)
+        for t,g in (("12C",gold),("15C",silver),("16C",silver)): badge1(t,g).save(f"emblem-{t.lower()}-1024.png")
+        print("DIM", DIM); sys.exit(0)
     ic=badge3(); ic.save("AppIcon-square-1024.png")
+    for t,g in (("12C",gold),("15C",silver),("16C",silver)): badge1(t,g).save(f"emblem-{t.lower()}-1024.png")   # 0.6.5: one lit panel per face
     for s in (512,256,128,64,32,16): ic.resize((s,s),Image.LANCZOS).save(f"AppIcon-square-{s}.png")
     pv=Image.new("RGB",(1200,560),(236,236,236)); pv.paste(Image.new("RGB",(600,560),(40,40,44)),(600,0))
     for bx in (0,600):
