@@ -11,7 +11,7 @@ import Foundation
 extension PhotoFace {
     static let gZoneFractions: [String: CGFloat] = [
         "face_12c": 0.365,
-        "face_15c": 0.364,
-        "face_16c": 0.352,
+        "face_15c": 0.29,
+        "face_16c": 0.30,
     ]
 }

@@ -172,6 +172,11 @@ final class AppModel: ObservableObject {
     /// Notes found next to a memory file being opened, used once it is loaded.
     var pendingSidecar: (doc: ProgramDocument, url: URL)?
     var lastProgramKeys: [String] = []
+    /// The last HP-15C Simulator program file imported (0.7.2): its USER-mode "u" markers and notes the program
+    /// document has no place for go back out with File ▸ Export Program (.15c)… while the program is unchanged.
+    var importedManzProgram: Manz15CProgram?
+    /// File ▸ Import Program (.15c)… is keying a program in.
+    @Published var isImportingProgram = false
     var memoryFileNameCandidate: String?
     /// Last file name chosen per kind of export (0.6.5).
     var exportNames = ExportNameMemory()

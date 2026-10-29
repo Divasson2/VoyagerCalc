@@ -34,7 +34,7 @@ final class DocFontStore: @unchecked Sendable {   // file reads only
     static let keysFile = "HP15CSimulatorKeys.ttf", displayFile = "HP15CSimulatorDisplay.ttf"
 
     /// The credit shown in About (and kept in the README and art/fonts/README.md): Manz's freeware copyright notice stays with the display font.
-    static let credit = "Documentation PDF fonts, included with the app: key-cap font by Eric Rechlin; seven-segment display font by Torsten Manz (HP15C Simulator Font © 2005 Torsten Manz, Freeware). The font files are renamed copies (name table only) that keep their copyright notices."
+    static let credit = "Documentation PDF fonts, included with the app: key-cap font by Eric Rechlin; seven-segment display font by Torsten Manz (HP15C Simulator Font © 2005 Torsten Manz, Freeware). The font files are renamed copies (name table only) that keep their copyright notices. HP-15C and HP-16C calculator photographs by Warren Young."
 
     /// The bundles searched: the one holding this code (the app, or the test bundle in tests), then the main bundle.
     private static var bundles: [Bundle] { [Bundle(for: DocFontStore.self), Bundle.main] }

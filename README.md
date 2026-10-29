@@ -4,15 +4,6 @@ Calculator app for macOS, iPadOS and iOS that runs your own 12C / 15C / 16C CE f
 a native emulator of the calculator's ARM chip. MIT licence (`LICENSE`).
 Not affiliated with HP Inc.
 
-## 0.7.1 (Mac)
-
-Real-speed timing (Turbo removed), 15C Matrix Editor with spreadsheet paste, option to make clicks on the
-f/g legends act as f/g + key, key click sound, lighter 15C/16C LCD, opaque inspector section headers,
-shared self-test display, and a key-focus fix.
-
-This repository holds the source only. The notarized Mac download is distributed separately (no binaries,
-firmware, ROMs or memory dumps are published here; you supply your own calculator firmware).
-
 * `core/`: the portable C core (Cortex-M4 + SAM4L model), CLI and tests. See `core/README.md`.
 * `app/`: the SwiftUI app and Xcode project. See `app/README.md` (how to open and run it).
 * `Package.swift`: core + Swift wrapper + model data as a Swift package (`swift test`, also on Linux).
@@ -45,3 +36,5 @@ next to the memory file (File ▸ Save / Open Program Notes…). The 12C program
 **Fonts credit:** the documentation PDF fonts included with the app are the key-cap font by Eric Rechlin and the
 seven-segment display font by Torsten Manz (HP15C Simulator Font © 2005 Torsten Manz, Freeware). The files are renamed
 copies (name table only) and keep their copyright notices. See `art/fonts/README.md`.
+
+**Photographs credit:** HP-15C and HP-16C calculator photographs by Warren Young.

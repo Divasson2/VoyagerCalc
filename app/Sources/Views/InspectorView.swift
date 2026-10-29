@@ -190,7 +190,7 @@ struct RegistersPanel: View {
         if isStatic {
             VStack(alignment: .leading, spacing: 0) {
                 SectionHeader(title: s.model == 12 ? "Stack and financial registers" : "Stack")
-                ForEach(s.stack) { row($0) }
+                ForEach(stackShown) { row($0) }
                 if let p = s.pool {
                     SectionHeader(title: "Memory")
                     PoolSection(pool: p)
@@ -208,6 +208,12 @@ struct RegistersPanel: View {
         }
     }
 
+    /// Stack shown top-to-bottom the way users think of it: I, LAST X, T, Z, Y, X, then any others (12C financial registers).
+    private var stackShown: [RegisterValue] {
+        let top = ["I", "LAST X", "T", "Z", "Y", "X"]
+        return top.compactMap { n in s.stack.first { $0.name == n } } + s.stack.filter { !top.contains($0.name) }
+    }
+
     /// Stack rows: the imaginary part in complex mode, matrix descriptors by name.
     private func row(_ v: RegisterValue) -> RegisterRow {
         RegisterRow(value: v, base: s.base, imaginary: s.imaginary(of: v.name), descriptor: s.descriptorText(v))
@@ -217,7 +223,7 @@ struct RegistersPanel: View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                 Section {
-                    ForEach(s.stack) { row($0) }
+                    ForEach(stackShown) { row($0) }
                 } header: { SectionHeader(title: s.model == 12 ? "Stack and financial registers" : "Stack") }
                 if let p = s.pool {
                     Section { PoolSection(pool: p) } header: { SectionHeader(title: "Memory") }

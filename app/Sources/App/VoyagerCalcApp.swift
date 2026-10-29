@@ -83,6 +83,13 @@ struct CalculatorCommands: Commands {
                 .keyboardShortcut("e", modifiers: [.command, .shift])
                 .disabled(!app.isRunning || !app.hasInspector)
             Button("Export Listing as Text…") { app.exportText() }.disabled(!app.isRunning || !app.hasInspector)
+            #if os(macOS)
+            // 0.7.2: HP-15C Simulator program files (Torsten Manz's .15c text format), HP-15C only
+            Button("Import Program (.15c)…") { app.importManzProgram() }.disabled(!app.canUseManzFiles)
+                .help("HP-15C only")
+            Button("Export Program (.15c)…") { app.exportManzProgram() }.disabled(!app.canUseManzFiles)
+                .help("HP-15C only")
+            #endif
             Picker("PDF Paper Size", selection: $app.paper) {
                 ForEach(PDFPaper.allCases, id: \.self) { Text($0.title).tag($0) }
             }

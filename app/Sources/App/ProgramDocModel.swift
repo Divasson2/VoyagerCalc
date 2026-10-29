@@ -205,6 +205,7 @@ extension AppModel {
         memoryFileNameCandidate = nil
         memoryFileName = nil
         lastProgramKeys = []
+        importedManzProgram = nil
         exportNames.forgetAll()
         if forgetStored, persistState { UserDefaults.standard.removeObject(forKey: docDefaultsKey) }
     }
