@@ -1,5 +1,7 @@
 import XCTest
+#if canImport(VoyagerKit)
 @testable import VoyagerKit
+#endif
 final class TmpReproTests: XCTestCase {
     func testRepro() throws {
         let m = CalculatorMachine(); try m.loadFirmware(Fixtures.multiE3E3!); try m.boot(restoring: nil)

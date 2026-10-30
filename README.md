@@ -37,4 +37,4 @@ next to the memory file (File ▸ Save / Open Program Notes…). The 12C program
 seven-segment display font by Torsten Manz (HP15C Simulator Font © 2005 Torsten Manz, Freeware). The files are renamed
 copies (name table only) and keep their copyright notices. See `art/fonts/README.md`.
 
-**Photographs credit:** HP-15C and HP-16C calculator photographs by Warren Young.
+**Photographs credit:** HP-15C and HP-16C calculator photographs (front and back) by Warren Young.

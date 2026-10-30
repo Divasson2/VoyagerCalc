@@ -156,8 +156,8 @@ final class Release067Tests: XCTestCase {
     func testEmblemUnlitPanelsAreLighterButStillGrey() throws {
         let faces: [(name: String, badge: CGRect, lit: Int)] = [
             ("face_12c_nolcd", CGRect(x: 1739, y: 82, width: 148, height: 148), 0),
-            ("face_15c_nolcd", CGRect(x: 1740, y: 90, width: 147, height: 147), 1),
-            ("face_16c_nolcd", CGRect(x: 1742, y: 89, width: 147, height: 147), 2)]
+            ("face_15c_nolcd", CGRect(x: 1740, y: 113, width: 147, height: 147), 1),      // v3 / v4 photo faces (0.7.4: re-measured)
+            ("face_16c_nolcd", CGRect(x: 1741, y: 116, width: 147, height: 147), 2)]
         for f in faces {
             let url = try XCTUnwrap(Bundle(for: Release067Tests.self).url(forResource: f.name, withExtension: "png"), f.name)
             let rep = try XCTUnwrap(NSBitmapImageRep(data: try Data(contentsOf: url)))

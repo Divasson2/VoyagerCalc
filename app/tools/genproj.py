@@ -101,12 +101,12 @@ common = {
     "HEADER_SEARCH_PATHS": "$(SRCROOT)/../core/include",
     "GCC_C_LANGUAGE_STANDARD": "c11",
     "CLANG_ENABLE_MODULES": "YES",
-    "MARKETING_VERSION": "0.7.3",
-    "CURRENT_PROJECT_VERSION": "1",
+    "MARKETING_VERSION": "0.7.4",
+    "CURRENT_PROJECT_VERSION": "2",
     "ENABLE_USER_SCRIPT_SANDBOXING": "YES",
 }
 
-def configs(tname, extra):
+def configs(tname, extra, release_extra=None):
     ids = []
     for cfg in ("Debug", "Release"):
         s = dict(common); s.update(extra)
@@ -118,17 +118,18 @@ def configs(tname, extra):
             s["DEBUG_INFORMATION_FORMAT"] = "dwarf"
         else:
             s["DEBUG_INFORMATION_FORMAT"] = "dwarf-with-dsym"
+            s.update(release_extra or {})
         ids.append(add(oid("cfg", tname, cfg), {"isa": "XCBuildConfiguration", "buildSettings": s, "name": cfg}))
     return add(oid("cfglist", tname), {"isa": "XCConfigurationList", "buildConfigurations": ids,
                "defaultConfigurationIsVisible": "0", "defaultConfigurationName": "Debug"})
 
-def target(name, product_ref, ptype, sources, settings, resources=()):
+def target(name, product_ref, ptype, sources, settings, resources=(), release=None):
     bfs = [add(oid("bf", name, rel(f, ROOT)), {"isa": "PBXBuildFile", "fileRef": fref(f)}) for f in sources]
     rbfs = [add(oid("rbf", name, rel(f, ROOT)), {"isa": "PBXBuildFile", "fileRef": fref(f)}) for f in resources]
     src = add(oid("srcphase", name), {"isa": "PBXSourcesBuildPhase", "buildActionMask": "2147483647", "files": bfs, "runOnlyForDeploymentPostprocessing": "0"})
     fw = add(oid("fwphase", name), {"isa": "PBXFrameworksBuildPhase", "buildActionMask": "2147483647", "files": [], "runOnlyForDeploymentPostprocessing": "0"})
     res = add(oid("resphase", name), {"isa": "PBXResourcesBuildPhase", "buildActionMask": "2147483647", "files": rbfs, "runOnlyForDeploymentPostprocessing": "0"})
-    return add(oid("target", name), {"isa": "PBXNativeTarget", "buildConfigurationList": configs(name, settings),
+    return add(oid("target", name), {"isa": "PBXNativeTarget", "buildConfigurationList": configs(name, settings, release),
                "buildPhases": [src, fw, res], "buildRules": [], "dependencies": [], "name": name,
                "productName": "VoyagerCalc" if "Tests" not in name else name, "productReference": product_ref, "productType": ptype})
 
@@ -142,7 +143,11 @@ t_mac = target("VoyagerCalc-macOS", p_mac, "com.apple.product-type.application",
     "CODE_SIGN_STYLE": "Manual", "CODE_SIGN_IDENTITY": "-", "DEVELOPMENT_TEAM": "",
     "ENABLE_HARDENED_RUNTIME": "YES", "COMBINE_HIDPI_IMAGES": "YES",
     "LD_RUNPATH_SEARCH_PATHS": "$(inherited) @executable_path/../Frameworks",
-    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}, faces + fonts + [mac_assets])
+    "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon"}, faces + fonts + [mac_assets],
+    # Release (Product > Archive): Developer ID signed, hardened runtime, no get-task-allow, so it can be notarized
+    release={"CODE_SIGN_IDENTITY": "Developer ID Application: The Calculator Store SLNE (XZKHVBD7Q9)",
+             "DEVELOPMENT_TEAM": "XZKHVBD7Q9", "CODE_SIGN_INJECT_BASE_ENTITLEMENTS": "NO",
+             "OTHER_CODE_SIGN_FLAGS": "--timestamp", "ENABLE_HARDENED_RUNTIME": "YES"})
 t_ios = target("VoyagerCalc-iOS", p_ios, "com.apple.product-type.application", app_sources, {
     "PRODUCT_NAME": "VoyagerCalc", "PRODUCT_BUNDLE_IDENTIFIER": BUNDLE_ID, "SDKROOT": "iphoneos",
     "SUPPORTED_PLATFORMS": "iphoneos iphonesimulator", "IPHONEOS_DEPLOYMENT_TARGET": "17.0", "TARGETED_DEVICE_FAMILY": "1,2",

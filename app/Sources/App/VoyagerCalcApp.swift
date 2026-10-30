@@ -42,6 +42,11 @@ struct VoyagerCalcApp: App {
             MatrixEditorView(editor: app.matrixEditor).environmentObject(app)
         }
         .defaultSize(width: 640, height: 540)
+        // 0.7.4: View ▸ Show Calculator Back (⌘B), a separate resizable window that follows the model
+        Window("Calculator Back", id: CalculatorBackView.windowID) {
+            CalculatorBackView().environmentObject(app)
+        }
+        .defaultSize(width: 900, height: 560)
         #endif
     }
 }
@@ -105,6 +110,12 @@ struct CalculatorCommands: Commands {
             Button(app.showInspector ? "Hide Registers & Program" : "Show Registers & Program") { app.showInspector.toggle() }
                 .keyboardShortcut("i")
                 .disabled(!app.isRunning || !app.hasInspector)
+            #if os(macOS)
+            Button("Show Calculator Back") { openWindow(id: CalculatorBackView.windowID) }
+                .keyboardShortcut("b")
+                .disabled(!app.canShowCalculatorBack)
+                .help("HP-15C and HP-16C only")
+            #endif
             Toggle("Show Key Help", isOn: $showKeyHelp)      // tooltip + shortcut bubble on hover; off by default
             Divider()
             Toggle("Click f/g Labels", isOn: $app.legendClicks)    // 0.7.1, on by default (as the Qt app)

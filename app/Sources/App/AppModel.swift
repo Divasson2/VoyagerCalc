@@ -452,6 +452,16 @@ final class AppModel: ObservableObject {
     /// Key Click Sound (0.7.1): one click per key press, never blocking.
     private func clickSound() { if keyClickSound { KeyClick.play() } }
 
+    /// 0.7.4: an inspector context-menu command (GTO nnn, RCL / STO ... on a register), keyed as the keystrokes.
+    func performKeys(_ keys: [Int]) {
+        guard let e = engine, !keys.isEmpty, !isSwitchingModel else { return }
+        apply(latch.unlatchAll())
+        e.send(.perform { m in try? m.perform(keys: keys) })
+    }
+
+    /// View ▸ Show Calculator Back (⌘B): HP-15C and HP-16C.
+    var canShowCalculatorBack: Bool { isRunning && !isSwitchingModel && CalculatorBackView.imageName(model: snapshot.model) != nil }
+
     func release(_ code: Int) {
         apply(latch.release(code))
     }

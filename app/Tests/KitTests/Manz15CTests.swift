@@ -6,7 +6,9 @@
 // (they are not part of this repository); the other tests use small inline files.
 
 import XCTest
+#if canImport(VoyagerKit)
 @testable import VoyagerKit
+#endif
 
 final class Manz15CTests: XCTestCase {
 

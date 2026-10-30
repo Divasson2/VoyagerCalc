@@ -73,7 +73,7 @@ struct InspectorView: View {
     }
     private func edit(_ step: Int) { draft = app.comment(at: step); app.editingCommentStep = step }
     private func program(_ s: InspectorSnapshot) -> ProgramPanel {
-        ProgramPanel(s: s, comments: comments, onEdit: edit)
+        ProgramPanel(s: s, comments: comments, onEdit: edit, onKeys: { app.performKeys($0) })
     }
 
     var body: some View {
@@ -91,10 +91,10 @@ struct InspectorView: View {
                 Divider()
                 switch isStatic ? .both : pane {
                 case .both:
-                    RegistersPanel(s: s).frame(minHeight: 0, maxHeight: .infinity)
+                    RegistersPanel(s: s, onKeys: { app.performKeys($0) }).frame(minHeight: 0, maxHeight: .infinity)
                     Divider()
                     program(s).frame(minHeight: 0, maxHeight: .infinity)
-                case .registers: RegistersPanel(s: s).frame(minHeight: 0, maxHeight: .infinity)
+                case .registers: RegistersPanel(s: s, onKeys: { app.performKeys($0) }).frame(minHeight: 0, maxHeight: .infinity)
                 case .program: program(s).frame(minHeight: 0, maxHeight: .infinity)
                 }
             } else {
@@ -181,6 +181,7 @@ struct Tag: View {
 
 struct RegistersPanel: View {
     let s: InspectorSnapshot
+    var onKeys: ([Int]) -> Void = { _ in }
     @AppStorage("inspectorHideZeros") private var hideZeros = false
     @Environment(\.inspectorStatic) private var isStatic
 
@@ -216,7 +217,8 @@ struct RegistersPanel: View {
 
     /// Stack rows: the imaginary part in complex mode, matrix descriptors by name.
     private func row(_ v: RegisterValue) -> RegisterRow {
-        RegisterRow(value: v, base: s.base, imaginary: s.imaginary(of: v.name), descriptor: s.descriptorText(v))
+        RegisterRow(value: v, base: s.base, imaginary: s.imaginary(of: v.name), descriptor: s.descriptorText(v),
+                    actions: CalcActions.registerMenu(s, name: v.name), onKeys: onKeys)
     }
 
     private var scrolling: some View {
@@ -230,7 +232,7 @@ struct RegistersPanel: View {
                     Section { ForEach(s.matrices) { MatrixRow(m: $0) } } header: { SectionHeader(title: "Matrices") }
                 }
                 Section {
-                    ForEach(shown) { RegisterRow(value: $0, base: s.base) }
+                    ForEach(shown) { RegisterRow(value: $0, base: s.base, actions: CalcActions.registerMenu(s, name: $0.name), onKeys: onKeys) }
                     if shown.isEmpty { Text("All registers are zero.").foregroundStyle(.secondary).padding(10) }
                 } header: {
                     SectionHeader(title: "Storage registers (\(s.registerCount))") {
@@ -266,6 +268,8 @@ struct RegisterRow: View {
     let base: Int
     var imaginary: RegisterValue? = nil      // 15C complex mode
     var descriptor: String? = nil           // "matrix A (2×3)"
+    var actions: [CalcAction] = []          // 0.7.4: RCL / STO / STO+−×÷ / RCL+−×÷ / x≷, keyed as on the calculator
+    var onKeys: ([Int]) -> Void = { _ in }
     @State private var flash = false
 
     /// Binary in groups of four for reading; the other bases as the calculator shows them.
@@ -313,12 +317,29 @@ struct RegisterRow: View {
         .contextMenu {
             Button("Copy \(value.text)") { copy(value.text) }
             if value.isInteger { Button("Copy decimal \(value.decimal)") { copy(value.decimal) } }
+            CalcActionItems(actions: actions, onKeys: onKeys, separatorFirst: true)
         }
         .onChange(of: value.stored &+ (imaginary?.raw ?? 0)) { _, _ in
             flash = true
             withAnimation(.easeOut(duration: 1.2).delay(0.4)) { flash = false }
         }
         .accessibilityElement(children: .combine)
+    }
+}
+
+/// Context-menu items for CalcActions (separators where the action asks for one).
+struct CalcActionItems: View {
+    let actions: [CalcAction]
+    var onKeys: ([Int]) -> Void
+    var separatorFirst = false
+    var body: some View {
+        if !actions.isEmpty {
+            if separatorFirst { Divider() }
+            ForEach(Array(actions.enumerated()), id: \.offset) { _, a in
+                if a.separatorBefore { Divider() }
+                Button(a.title) { onKeys(a.keys) }.disabled(!a.enabled)
+            }
+        }
     }
 }
 
@@ -336,7 +357,13 @@ struct ProgramPanel: View {
     let s: InspectorSnapshot
     var comments: [Int: String] = [:]
     var onEdit: (Int) -> Void = { _ in }
+    var onKeys: ([Int]) -> Void = { _ in }       // 0.7.4: GTO nnn
     @Environment(\.inspectorStatic) private var isStatic
+
+    private func gtoItem(_ line: Int) -> some View {
+        let a = CalcActions.gto(s, line: line)
+        return Button(a.title) { onKeys(a.keys) }.disabled(!a.enabled)
+    }
 
     private var zero: String { s.model == 12 ? "00" : "000" }
 
@@ -362,13 +389,18 @@ struct ProgramPanel: View {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
                         Section {
-                            ProgramRow(label: zero, keys: "", mnemonic: "", prefix: "", current: s.line == 0, running: s.running).id(0)
+                            ProgramRow(label: zero, keys: "", mnemonic: "", prefix: "", current: s.line == 0, running: s.running)
+                                .contentShape(Rectangle()).contextMenu { gtoItem(0) }.id(0)
                             ForEach(s.program) { p in
                                 ProgramRow(label: p.number(model: s.model), keys: p.keys, mnemonic: p.mnemonic, prefix: p.prefix,
                                            current: p.line == s.line, running: s.running, comment: comments[p.line] ?? "")
                                     .contentShape(Rectangle())
                                     .onTapGesture(count: 2) { onEdit(p.line) }
-                                    .contextMenu { Button(comments[p.line] == nil ? "Add Comment…" : "Edit Comment…") { onEdit(p.line) } }
+                                    .contextMenu {
+                                        gtoItem(p.line)
+                                        Divider()
+                                        Button(comments[p.line] == nil ? "Add Comment…" : "Edit Comment…") { onEdit(p.line) }
+                                    }
                                     .id(p.line)
                             }
                         } header: { SectionHeader(title: "Program (\(s.lines) lines)") }
