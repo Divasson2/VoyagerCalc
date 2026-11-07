@@ -149,8 +149,8 @@ final class SnapshotTests: XCTestCase {
 
         for (v, name) in [(152, "mac-model-2-15c.png"), (160, "mac-model-3-16c.png")] {
             app.chooseModel(v)
-            XCTAssertEqual(app.pendingAction, .switchModel(v), "asks first")
-            app.confirm(.switchModel(v))
+            XCTAssertEqual(app.pendingAction, .switchModel(v, keepsMemory: false), "asks first")
+            app.confirm(.switchModel(v, keepsMemory: false))
             try await until("switch to \(v)") { !app.isSwitchingModel }
             XCTAssertNil(app.errorMessage)
             XCTAssertEqual(app.snapshot.variant, v, "face follows at once")

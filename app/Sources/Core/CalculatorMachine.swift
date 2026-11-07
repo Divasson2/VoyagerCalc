@@ -314,14 +314,36 @@ public final class CalculatorMachine {
         SavedState(memory: try memory(turnBackOn: turnBackOn), variant: variant, firmwareID: firmwareID)
     }
 
-    /// Key under each label of the multi-ROM model menu ("12 15.2  16" / "15 15.2  16").
-    public static func modelMenuKey(for variant: Int) -> Int? {
+    /// True for the HP-16C Enhanced (E9E9) style: only 16C + 15.2, each mode keeps its memory.
+    /// Multi (12C/15.2/16C) and 15C 3-ROM (15.0/15.2/16C) are false.
+    public static func isEnhanced16C152(_ images: [Int]) -> Bool {
+        images.contains(160) && images.contains(152) && !images.contains(120) && !images.contains(150)
+    }
+
+    public var keepsMemoryOnModelSwitch: Bool { Self.isEnhanced16C152(images) }
+
+    /// Key under each label of the model picker (service menu 4).
+    /// Multi / 15C 3-ROM show "12 15.2  16" / "15 15.2  16" → keys 1, 3, 5.
+    /// Enhanced 16C+15.2 (E9E9) shows "16 15.2" → B/C (1/2) = 16C, D/E (3/4) = 15.2.
+    public static func modelMenuKey(for variant: Int, images: [Int]) -> Int? {
+        if isEnhanced16C152(images) {
+            switch variant {
+            case 160: return 1
+            case 152: return 3
+            default: return nil
+            }
+        }
         switch variant {
         case 120, 150: return 1
         case 152: return 3
         case 160: return 5
         default: return nil
         }
+    }
+
+    /// Multi / 15C 3-ROM key map (kept for call sites that only have a variant).
+    public static func modelMenuKey(for variant: Int) -> Int? {
+        modelMenuKey(for: variant, images: [120, 150, 152, 160])
     }
 
     public var displayText: String { calc.lcd().text }
@@ -333,11 +355,12 @@ public final class CalculatorMachine {
     }
 
     /// Use the calculator's own model switch, as on the calculator: off, g-ENTER-ON (the
-    /// service menu), 4 (the model menu: "12 15.2  16" on the 12C multi, "15 15.2  16" on
-    /// the 15C 3-ROM builds), then the key under the label. The firmware restarts as that
-    /// model, normally with a cleared memory ("Pr Error", cleared here with ←).
+    /// service menu), 4 (the model picker), then the key under the label. Multi / 15C 3-ROM
+    /// show "12 15.2  16" / "15 15.2  16" and usually clear memory ("Pr Error", cleared here
+    /// with ←). Enhanced 16C+15.2 (E9E9) shows "16 15.2" (B/C = 16C, D/E = 15.2) and keeps
+    /// each mode's memory in SRAM slots.
     public func switchVariant(to v: Int) throws {
-        guard images.count > 1, images.contains(v), let k = Self.modelMenuKey(for: v) else { return }
+        guard images.count > 1, images.contains(v), let k = Self.modelMenuKey(for: v, images: images) else { return }
         try powerOff()
         try chordWithON([Self.keyG, Self.keyENTER])
         try tap(16)                    // "4": model menu

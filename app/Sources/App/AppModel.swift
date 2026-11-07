@@ -43,9 +43,10 @@ enum FileTask { case firmware, memory, notes }
 /// What the save panel is saving.
 enum ExportKind: String { case memory, notes, pdf, text }
 
-/// Something that clears the calculator's memory, waiting for the user's confirmation.
+/// Something that needs the user's confirmation before it changes the calculator's memory or model.
 enum PendingAction: Equatable, Identifiable {
-    case switchModel(Int)
+    /// Switch the running calculator image. `keepsMemory` is true on the HP-16C Enhanced (E9E9).
+    case switchModel(Int, keepsMemory: Bool)
     case memoryReset
     /// Load a checked 2 KB image (from a file or the real calculator) over the emulator's memory.
     case loadMemory(Data, source: String)
@@ -55,7 +56,7 @@ enum PendingAction: Equatable, Identifiable {
     case switchThenLoad(Data, source: String, variant: Int, reason: String)
     var id: String {
         switch self {
-        case .switchModel(let v): return "switch\(v)"
+        case .switchModel(let v, _): return "switch\(v)"
         case .memoryReset: return "reset"
         case .loadMemory(_, let src): return "load " + src
         case .loadMemoryAnyway(_, let src, _): return "load anyway " + src
@@ -64,7 +65,7 @@ enum PendingAction: Equatable, Identifiable {
     }
     var title: String {
         switch self {
-        case .switchModel(let v): return "Switch to the \(CalculatorMachine.variantName(v))?"
+        case .switchModel(let v, _): return "Switch to the \(CalculatorMachine.variantName(v))?"
         case .memoryReset: return "Reset the calculator's memory?"
         case .loadMemory(_, let src): return "Load the memory from \(src)?"
         case .loadMemoryAnyway(_, let src, _): return "The memory from \(src) may not fit"
@@ -73,7 +74,10 @@ enum PendingAction: Equatable, Identifiable {
     }
     var message: String {
         switch self {
-        case .switchModel: return "Switching model clears the calculator's memory (programs, registers and settings), as on the calculator. You can save a backup first."
+        case .switchModel(_, let keeps):
+            return keeps
+                ? "Each mode keeps its own memory (programs, registers and settings). Switching brings back the other mode's memory."
+                : "Switching model clears the calculator's memory (programs, registers and settings), as on the calculator. You can save a backup first."
         case .memoryReset: return "ON + − clears all programs, registers and settings (Pr Error). You can save a backup first."
         case .loadMemory(_, let src): return "This replaces the emulator's memory (programs, registers and settings) with the one from \(src). You can save a backup of the emulator's memory first."
         case .loadMemoryAnyway(_, _, let reason): return reason + " You can load it anyway; save a backup of the emulator's memory first if you want to keep it."
@@ -139,7 +143,7 @@ final class AppModel: ObservableObject {
     /// Calculator images in the firmware (120 / 150 / 152 / 160): the Model menu.
     @Published private(set) var images: [Int] = []
     @Published private(set) var isSwitchingModel = false
-    /// Waiting for "Switching model clears the calculator's memory" to be confirmed.
+    /// Waiting for a model-switch or memory-change confirmation.
     @Published var pendingAction: PendingAction?
     @Published var errorMessage: String?
     @Published var notice: String?
@@ -556,7 +560,7 @@ final class AppModel: ObservableObject {
     func chooseModel(_ v: Int) {
         if isStock { return stockUnavailable("Switching the model") }
         guard canSwitchModel, images.contains(v) else { return }
-        pendingAction = .switchModel(v)
+        pendingAction = .switchModel(v, keepsMemory: CalculatorMachine.isEnhanced16C152(images))
     }
 
     /// The confirmation's "Save Backup First…": save a memory file, then go on.
@@ -573,7 +577,7 @@ final class AppModel: ObservableObject {
             releaseLatchedKeys()
             clearAllNotes(forgetStored: true)          // 0.6.9: a reset clears the notes too (comments, orphans, title, author, description)
             engine?.send(.chord(.memoryReset))
-        case .switchModel(let v):
+        case .switchModel(let v, _):
             switchModel(to: v)
         case .loadMemory(let data, _), .loadMemoryAnyway(let data, _, _):
             engine?.send(.loadMemory(data) { [weak self] err in
@@ -597,7 +601,11 @@ final class AppModel: ObservableObject {
             self.isSwitchingModel = false
             switch r {
             case .success:
-                self.clearAllNotes(forgetStored: true)        // 0.6.9: the model switch cleared the memory, so the notes go too
+                // Multi / 3-ROM clear memory on switch, so notes go too. Enhanced (E9E9) keeps
+                // each mode's memory; leave notes alone (they follow the emulator's live image).
+                if !CalculatorMachine.isEnhanced16C152(self.images) {
+                    self.clearAllNotes(forgetStored: true)
+                }
                 if self.persistState { self.saveStateNow(turnBackOn: true) }   // remembered for this firmware
                 next?()
             case .failure(let err):

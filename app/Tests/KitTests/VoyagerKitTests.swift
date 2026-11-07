@@ -37,6 +37,8 @@ enum Fixtures {
     /// HP's original 2015 HP-12C firmware: only ever read from the user's own folder, for local checks. Never part of the repo.
     static var stock12C: Data? { find(["HP12C_SAM4_01-30-2015.bin"]) }
     static var hp15c3ROM: Data? { find(["hp15c-3rom-mute120-fsm5-rel80-opt5cycle-debounce-menu-stopwatch-48fix-keys-batt-trim4-show-C8C8.bin"]) }
+    /// HP-16C Enhanced: 16C extended memory + 15.2 (E9E9).
+    static var enhancedE9E9: Data? { find(["HP16c-enhanced-152-ext16-E9E9.bin"]) }
 
     static var fixturesDir: URL {
         URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("Fixtures")

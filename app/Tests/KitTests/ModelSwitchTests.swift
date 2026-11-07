@@ -45,7 +45,8 @@ final class ModelSwitchTests: XCTestCase {
         if let d = Fixtures.multiE3E3 { let c = VoyagerCalculator(); try c.loadFirmware(d); XCTAssertEqual(c.firmwareImages, [120, 152, 160]) }
         if let d = Fixtures.multi { let c = VoyagerCalculator(); try c.loadFirmware(d); XCTAssertEqual(c.firmwareImages, [120, 152, 160]) }
         if let d = Fixtures.hp15c3ROM { let c = VoyagerCalculator(); try c.loadFirmware(d); XCTAssertEqual(c.firmwareImages, [150, 152, 160]) }
-        if Fixtures.firmware16Ext == nil && Fixtures.multiE3E3 == nil && Fixtures.hp15c3ROM == nil { throw XCTSkip("no firmware") }
+        if let d = Fixtures.enhancedE9E9 { let c = VoyagerCalculator(); try c.loadFirmware(d); XCTAssertEqual(c.firmwareImages, [152, 160]) }
+        if Fixtures.firmware16Ext == nil && Fixtures.multiE3E3 == nil && Fixtures.hp15c3ROM == nil && Fixtures.enhancedE9E9 == nil { throw XCTSkip("no firmware") }
     }
 
     /// 12C multi E3E3: every transition (including to the running model) clears memory.
@@ -92,6 +93,40 @@ final class ModelSwitchTests: XCTestCase {
         XCTAssertNil(try m2.boot(restoring: saved))
         XCTAssertEqual(m2.variant, 160)
         XCTAssertTrue(m2.displayText.contains("abc") || m2.displayText.uppercased().contains("ABC"), m2.displayText)
+    }
+
+    /// Key under the picker label: Multi uses 1/3/5; Enhanced (E9E9) uses 1 for 16C and 3 for 15.2.
+    func testModelMenuKeys() {
+        XCTAssertEqual(CalculatorMachine.modelMenuKey(for: 160, images: [120, 152, 160]), 5)
+        XCTAssertEqual(CalculatorMachine.modelMenuKey(for: 152, images: [120, 152, 160]), 3)
+        XCTAssertEqual(CalculatorMachine.modelMenuKey(for: 120, images: [120, 152, 160]), 1)
+        XCTAssertEqual(CalculatorMachine.modelMenuKey(for: 160, images: [152, 160]), 1)
+        XCTAssertEqual(CalculatorMachine.modelMenuKey(for: 152, images: [152, 160]), 3)
+        XCTAssertNil(CalculatorMachine.modelMenuKey(for: 120, images: [152, 160]))
+        XCTAssertTrue(CalculatorMachine.isEnhanced16C152([152, 160]))
+        XCTAssertFalse(CalculatorMachine.isEnhanced16C152([120, 152, 160]))
+        XCTAssertFalse(CalculatorMachine.isEnhanced16C152([150, 152, 160]))
+    }
+
+    /// HP-16C Enhanced E9E9: switching 16C <-> 15.2 keeps each mode's own memory.
+    func testE9E9BothDirectionsKeepPerModeMemory() throws {
+        let m = try machine(Fixtures.enhancedE9E9, "E9E9")
+        XCTAssertEqual(m.images, [152, 160])
+        XCTAssertTrue(m.canSwitchModel)
+        XCTAssertTrue(m.keepsMemoryOnModelSwitch)
+        XCTAssertEqual(m.variant, 160)
+        try type(m, "7 7 STO 1")                         // 16C: R1 = 77
+        try m.switchModel(to: 152)
+        XCTAssertEqual(m.variant, 152)
+        try type(m, "5 5 STO 1")                         // 15.2: R1 = 55
+        try m.switchModel(to: 160)
+        XCTAssertEqual(m.variant, 160)
+        try type(m, "RCL 1")
+        XCTAssertTrue(m.displayText.contains("77"), "16C memory kept: \(m.displayText)")
+        try m.tap(CalculatorMachine.keyBSP)
+        try m.switchModel(to: 152)
+        try type(m, "RCL 1")
+        XCTAssertTrue(m.displayText.contains("55"), "15.2 memory kept: \(m.displayText)")
     }
 
     // MARK: Keys menu

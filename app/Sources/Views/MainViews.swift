@@ -28,7 +28,10 @@ struct ModelMenuItems: View {
         }
         if app.images.count > 1 {
             Divider()
-            Text(app.isSwitchingModel ? "Switching…" : "Switching clears the calculator's memory")
+            Text(app.isSwitchingModel ? "Switching…"
+                 : (CalculatorMachine.isEnhanced16C152(app.images)
+                    ? "Each mode keeps its own memory"
+                    : "Switching clears the calculator's memory"))
         }
         if app.isStock {
             Divider()
